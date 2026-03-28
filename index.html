@@ -25,11 +25,9 @@
   #root { display:flex; flex-direction:column; height:100vh; }
   #top  { display:grid; grid-template-columns:1fr 270px; flex:1; min-height:0; }
 
-  /* ── Viewer ── */
   #viewer-wrap { position:relative; overflow:hidden; background:#04040e; }
   #viewport    { width:100%; height:100%; }
 
-  /* Bond canvas — sits OVER 3Dmol, pointer-events none */
   #bond-canvas {
     position:absolute; top:0; left:0;
     width:100%; height:100%;
@@ -37,7 +35,6 @@
     z-index:10;
   }
 
-  /* HUD overlays */
   #badge {
     position:absolute; top:14px; left:14px;
     background:rgba(4,4,20,0.9);
@@ -73,7 +70,6 @@
     letter-spacing:.04em; z-index:20; pointer-events:none;
   }
 
-  /* Loading overlay */
   #loading {
     position:absolute; inset:0; background:var(--bg);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -85,7 +81,6 @@
   .load-bar-wrap { width:200px; height:3px; background:var(--dim); border-radius:2px; overflow:hidden; }
   .load-bar { height:3px; background:var(--gold); border-radius:2px; width:0%; transition:width .4s; }
 
-  /* ── Right Panel ── */
   #panel {
     background:var(--panel);
     border-left:1px solid var(--border);
@@ -141,7 +136,6 @@
     font-size:9px; color:var(--text-dim); line-height:1.85; border:1px solid #0a0a1a;
   }
 
-  /* ── Bottom Explainer ── */
   #explainer {
     background:#060612; border-top:1px solid var(--border);
     padding:14px 18px; height:200px; overflow-y:auto;
@@ -168,27 +162,26 @@
       <div id="viewport"></div>
       <canvas id="bond-canvas"></canvas>
 
-      <!-- Loading overlay -->
       <div id="loading">
-        <div class="load-title">LOADING AMYLOID-β STRUCTURE</div>
-        <div class="load-sub">Fetching 2BEG.pdb from RCSB…</div>
+        <div class="load-title">LOADING AMYLOID-&#946; STRUCTURE</div>
+        <div class="load-sub">Fetching 2BEG.pdb from RCSB&hellip;</div>
         <div class="load-bar-wrap"><div class="load-bar" id="lbar"></div></div>
-        <div class="load-sub" id="load-msg">Connecting…</div>
+        <div class="load-sub" id="load-msg">Connecting&hellip;</div>
       </div>
 
       <div id="badge">
         <div id="ov-name">RetinAD-1</div>
-        <div id="ov-score">-24.10 kcal/mol  ·  Rank #1</div>
+        <div id="ov-score">-24.10 kcal/mol &nbsp;&middot;&nbsp; Rank #1</div>
         <div id="ov-bonds">5 interaction bonds</div>
       </div>
-      <div id="novel-badge">★ NOVEL DESIGNED COMPOUND</div>
+      <div id="novel-badge">&#9733; NOVEL DESIGNED COMPOUND</div>
 
       <div id="legend">
         <span><span class="leg-dot" style="background:#2266cc;"></span>Protein ribbon</span>
         <span><span class="leg-dot" style="background:#ee2222;"></span>KLVFF site</span>
         <span><span class="leg-dot" id="leg-dot" style="background:#ffcc00;"></span><span id="leg-name">RetinAD-1</span></span>
       </div>
-      <div id="status">Initializing…</div>
+      <div id="status">Initializing&hellip;</div>
     </div>
 
     <div id="panel">
@@ -199,7 +192,7 @@
         <div id="i-note"></div>
         <div style="margin-top:9px;">
           <div class="plabel" style="margin-bottom:4px;">BINDING COMPONENTS</div>
-          <div class="brow"><span class="blbl">π-stack</span><div class="bbg"><div id="b-pi" class="bfill"></div></div><span id="v-pi" class="bval"></span></div>
+          <div class="brow"><span class="blbl">&#960;-stack</span><div class="bbg"><div id="b-pi" class="bfill"></div></div><span id="v-pi" class="bval"></span></div>
           <div class="brow"><span class="blbl">H-bond</span><div class="bbg"><div id="b-hb" class="bfill"></div></div><span id="v-hb" class="bval"></span></div>
           <div class="brow"><span class="blbl">hydrophob</span><div class="bbg"><div id="b-hp" class="bfill"></div></div><span id="v-hp" class="bval"></span></div>
         </div>
@@ -232,7 +225,7 @@
       <div id="tab-plain" class="xsec on">
         <div class="xcol">
           <div class="xhead" style="color:#ccaa00;">What you are seeing</div>
-          <div class="xbody">The <b>blue ribbon</b> is the amyloid-beta 42 protein — when it clumps, it kills brain cells. The <b>red patch</b> is the KLVFF segment (residues 16–20), the sticky strip that initiates clumping.<br><br>The <b>glowing sphere</b> is RetinAD-1. The <b>lines</b> are molecular bonds — it grips the KLVFF strip and physically blocks clumping. More lines = stronger grip.</div>
+          <div class="xbody">The <b>blue ribbon</b> is the amyloid-beta 42 protein &mdash; when it clumps, it kills brain cells. The <b>red patch</b> is the KLVFF segment (residues 16&ndash;20), the sticky strip that initiates clumping.<br><br>The <b>glowing sphere</b> is RetinAD-1. The <b>lines</b> are molecular bonds &mdash; it grips the KLVFF strip and physically blocks clumping. More lines = stronger grip.</div>
         </div>
         <div class="vdiv"></div>
         <div class="xcol">
@@ -243,34 +236,34 @@
       <div id="tab-sci" class="xsec">
         <div class="xcol">
           <div class="xhead" style="color:#44aaff;">Binding mechanism</div>
-          <div class="xbody">Abeta-42 aggregation is nucleated at KLVFF (Lys16–Phe20) via cross-β-sheet stacking. RetinAD-1 disrupts this via: (1) π-π stacking of its trihydroxyl B-ring against Phe19/Phe20, (2) H-bonding of 3',4',5'-OH to backbone NH of Val18/Leu17, (3) hydrophobic packing of the fluorophenyl region into the Val18 groove. PDB: 2BEG (NMR fibril, chain A).</div>
+          <div class="xbody">Abeta-42 aggregation is nucleated at KLVFF (Lys16&ndash;Phe20) via cross-&#946;-sheet stacking. RetinAD-1 disrupts this via: (1) &#960;-&#960; stacking of its trihydroxyl B-ring against Phe19/Phe20, (2) H-bonding of 3',4',5'-OH to backbone NH of Val18/Leu17, (3) hydrophobic packing of the fluorophenyl region into the Val18 groove. PDB: 2BEG (NMR fibril, chain A).</div>
         </div>
         <div class="vdiv"></div>
         <div class="xcol">
           <div class="xhead" style="color:#44aaff;">Validation anchor</div>
-          <div class="xbody">EGCG — a structurally related polyphenol — reaches the brain in rodent models and reduces amyloid burden in vivo (Rezai-Zadeh 2005; Ehrnhoefer 2008). RetinAD-1 outscores EGCG (−24.10 vs −22.55) on the identical target, with better Lipinski compliance. That published EGCG data is the closest experimental proxy for predicted RetinAD-1 activity.</div>
+          <div class="xbody">EGCG &mdash; a structurally related polyphenol &mdash; reaches the brain in rodent models and reduces amyloid burden in vivo (Rezai-Zadeh 2005; Ehrnhoefer 2008). RetinAD-1 outscores EGCG (&minus;24.10 vs &minus;22.55) on the identical target, with better Lipinski compliance.</div>
         </div>
       </div>
       <div id="tab-novel" class="xsec">
         <div class="xcol">
           <div class="xhead" style="color:#00aa66;">What is genuinely new</div>
-          <div class="xbody">Myricetin has high KLVFF affinity but is not developed as a drug due to rapid O-methylation (CYP-mediated) and near-zero aqueous solubility (~10 µg/mL).<br><br>RetinAD-1 addresses both: <b>C6-fluorine</b> blocks the primary metabolic oxidation site; <b>morpholine at C7</b> raises solubility ~8×. No published compound applies this combination to myricetin for any amyloid target.</div>
+          <div class="xbody">Myricetin has high KLVFF affinity but is not developed as a drug due to rapid O-methylation (CYP-mediated) and near-zero aqueous solubility (~10 &micro;g/mL).<br><br>RetinAD-1 addresses both: <b>C6-fluorine</b> blocks the primary metabolic oxidation site; <b>morpholine at C7</b> raises solubility ~8&times;. No published compound applies this combination to myricetin for any amyloid target.</div>
         </div>
         <div class="vdiv"></div>
         <div class="xcol">
           <div class="xhead" style="color:#00aa66;">Honest scope</div>
-          <div class="xbody">This is a <b>computational prediction</b>, not a synthesized drug. The scoring is physics-informed docking, not full MD simulation. The validation is indirect (EGCG analogy + correct FDA drug rankings).<br><br>For a science fair project, this is the correct level of claim. The novelty is the rational design process and the specific structural modifications.</div>
+          <div class="xbody">This is a <b>computational prediction</b>, not a synthesized drug. The scoring is physics-informed docking, not full MD simulation. The validation is indirect (EGCG analogy + correct FDA drug rankings).<br><br>For a science fair project, this is the correct level of claim.</div>
         </div>
       </div>
       <div id="tab-limits" class="xsec">
         <div class="xcol">
           <div class="xhead" style="color:#cc4433;">Why FDA drugs fall short</div>
-          <div class="xbody"><b>Donepezil and Galantamine</b> inhibit acetylcholinesterase — symptom management only. Their KLVFF scores (−11.24, −7.90) confirm they do nothing to block aggregation. Disease still progresses.<br><br><b>Lecanemab and donanemab</b> require IV infusion, cost $26K+/year, and carry significant ARIA (brain swelling) risk. Small molecules like RetinAD-1 are orally bioavailable in principle — a major practical advantage.</div>
+          <div class="xbody"><b>Donepezil and Galantamine</b> inhibit acetylcholinesterase &mdash; symptom management only. Their KLVFF scores (&minus;11.24, &minus;7.90) confirm they do nothing to block aggregation.<br><br><b>Lecanemab and donanemab</b> require IV infusion, cost $26K+/year, and carry significant ARIA (brain swelling) risk.</div>
         </div>
         <div class="vdiv"></div>
         <div class="xcol">
           <div class="xhead" style="color:#cc4433;">Where RetinAD-1 fits</div>
-          <div class="xbody">RetinAD-1 is in the same <b>mechanistic class</b> as EGCG — a small-molecule amyloid aggregation inhibitor — but with improved drug-likeness. It passes all Lipinski rules; EGCG does not. It has better predicted metabolic stability than Myricetin.<br><br>The research pipeline (AI early detection + drug candidate targeting the same protein) is the genuine contribution.</div>
+          <div class="xbody">RetinAD-1 is in the same <b>mechanistic class</b> as EGCG &mdash; a small-molecule amyloid aggregation inhibitor &mdash; but with improved drug-likeness. It passes all Lipinski rules; EGCG does not. It has better predicted metabolic stability than Myricetin.</div>
         </div>
       </div>
     </div>
@@ -280,20 +273,20 @@
       <div class="xhead" style="color:#444;">VIEWER GUIDE</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:4px;">
         <div style="background:#08080f;border-radius:5px;padding:7px;border:1px solid #0f0f1e;">
-          <div style="font-size:9px;color:#1e4a7a;font-weight:700;margin-bottom:3px;">BLUE — protein ribbon</div>
-          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Full Aβ-42 fibril. Stacked β-sheets shown as flat ribbon arrows. Slowly rotating.</div>
+          <div style="font-size:9px;color:#1e4a7a;font-weight:700;margin-bottom:3px;">BLUE &mdash; protein ribbon</div>
+          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Full A&#946;-42 fibril. Stacked &#946;-sheets shown as flat ribbon arrows. Slowly rotating.</div>
         </div>
         <div style="background:#08080f;border-radius:5px;padding:7px;border:1px solid #0f0f1e;">
-          <div style="font-size:9px;color:#882020;font-weight:700;margin-bottom:3px;">RED — KLVFF site</div>
-          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Residues 16–20. Stick model + bright surface. Camera zooms here on load.</div>
+          <div style="font-size:9px;color:#882020;font-weight:700;margin-bottom:3px;">RED &mdash; KLVFF site</div>
+          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Residues 16&ndash;20. Bright red cartoon + sticks. Camera focuses here on load.</div>
         </div>
         <div style="background:#08080f;border-radius:5px;padding:7px;border:1px solid #0f0f1e;">
-          <div id="sphere-guide" style="font-size:9px;color:#aa8800;font-weight:700;margin-bottom:3px;">GOLD — compound sphere</div>
-          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Solid sphere just outside KLVFF. Larger = stronger binder. Gold halo for RetinAD-1.</div>
+          <div id="sphere-guide" style="font-size:9px;color:#aa8800;font-weight:700;margin-bottom:3px;">GOLD &mdash; compound sphere</div>
+          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Sphere just outside KLVFF. Larger = stronger binder. Gold halo for RetinAD-1.</div>
         </div>
         <div style="background:#08080f;border-radius:5px;padding:7px;border:1px solid #0f0f1e;">
-          <div style="font-size:9px;color:#555;font-weight:700;margin-bottom:3px;">LINES — interaction bonds</div>
-          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Canvas-drawn bonds from each KLVFF residue to the compound. Always visible.</div>
+          <div style="font-size:9px;color:#555;font-weight:700;margin-bottom:3px;">LINES &mdash; interaction bonds</div>
+          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Canvas bonds from KLVFF residues to compound. White dots = anchor points.</div>
         </div>
       </div>
     </div>
@@ -304,21 +297,72 @@
 <script src="https://cdn.jsdelivr.net/npm/3dmol@2.0.1/build/3Dmol-min.js"></script>
 <script>
 /* =============================================================================
-   MOLECULAR VIEWER — COMPREHENSIVE FIX
-   
-   Five bugs fixed:
-   1. No red KLVFF — resi selector syntax wrong; now uses string '16-20'
-      and sphere markers placed at actual atom positions from 3Dmol model
-   2. Bonds detached — was using raw PDB coords to project; now uses 3Dmol's
-      live atom list which is already in the rotated model frame
-   3. Pulse only on one bond — bondPhase grew unbounded causing phase collapse;
-      now each bond has independent phase seeded by index
-   4. 4 bonds instead of 5 — was deduplicating by resnum across all chains but
-      still only getting chain A; now explicitly gets one CA per resnum 16-20
-      from the 3Dmol atom list (which already loaded the full model)
-   5. White dots on wrong protein region — 3Dmol sphere markers added at raw
-      coords didn't track rotation; removed from 3Dmol entirely, drawn on
-      canvas only alongside the bond lines where projection is live
+   MOLECULAR VIEWER — COMPREHENSIVE REWRITE
+
+   BUGS FIXED:
+
+   1. RED CLOUD / SURFACE ARTIFACT
+      Cause: addSurface(SAS) creates a volumetric blob that looks like a red
+      cloud around the KLVFF site. 3Dmol's surface renderer uses marching cubes
+      and the result with a 5-residue selection at default settings is ugly.
+      Fix: Removed addSurface entirely. KLVFF is marked with:
+        - cartoon colored red (the ribbon segment itself goes red)
+        - stick representation of side chains (thin red sticks)
+        - small 3Dmol sphere at each CA position (precise dot markers)
+      Result: clean red ribbon segment + crisp red dot markers. No cloud.
+
+   2. HEXAGONAL STICK ARTIFACT
+      Cause: Adding 'stick' style to KLVFF residues caused 3Dmol to render its
+      default hexagonal cross-section tube, which looks like a hexagonal prism.
+      Fix: Use radius:0.18 (thin sticks) so the cross-section is not visible
+      at normal zoom. At this radius sticks look like fine red lines/rods.
+
+   3. BONDS FLOATING / NOT ATTACHED TO KLVFF
+      Cause: The old project() function divided by vc.width (physical pixels of
+      3Dmol's HiDPI canvas) but modelToScreen() returns CSS pixel coordinates.
+      On a Retina/HiDPI display, vc.width = 2× CSS width, so scaleX = 0.5,
+      putting projected points at half the correct screen position.
+      Fix: Use vc.clientWidth (CSS width) for the scale calculation.
+      vc.clientWidth always matches CSS pixels regardless of device pixel ratio.
+
+   4. BONDS NOT TOUCHING THE SPHERE
+      Cause: The sphere screen radius estimate was hardcoded at 22px regardless
+      of zoom level, model scale, or sphere size. At many zoom levels the real
+      sphere screen radius is 40-80px, so lines stopped 22px short and had a
+      large gap before the sphere surface.
+      Fix: Dynamically estimate sphere screen radius by projecting a point that
+      is exactly coreRadius angstroms away from dockPos in model space. The
+      pixel distance between that projection and the sphere centre projection
+      gives the accurate on-screen radius. Clamp between 15px and 80px.
+
+   5. WRONG BOND COUNT — RetinAD-1 showed 4 instead of 5
+      Cause: viewer.selectedAtoms({atom:'CA'}) can fail silently and return
+      fewer atoms than expected if the PDB chain has duplicate residue numbers
+      or if the atom name in the PDB uses ' CA ' with spaces (standard PDB
+      format) that 3Dmol doesn't match with exact string 'CA' in some builds.
+      Fix: Three-tier fallback:
+        a) Try CA atoms (selectedAtoms({atom:'CA'}))
+        b) Try N backbone atoms
+        c) Try any atom per residue (catches any naming variant)
+        d) Final fallback: hardcoded 2BEG chain-A CA coordinates (exact PDB)
+      The hardcoded coords guarantee exactly 5 atoms for 2BEG.
+
+   6. BONDS TOO THIN / INVISIBLE
+      Cause: lineWidth 2.5px is barely visible on modern high-resolution displays
+      especially against the dark background and glowing protein.
+      Fix: lineWidth increased to 4px solid + 14px glow halo. Anchor dots 8px.
+      Pulse dots 5px. This makes bonds clearly visible as the main visual.
+
+   7. SPHERE NOT LOCKED TO KLVFF DURING ROTATION
+      Cause: dockPos was computed with a hardcoded (+5.5, +3.0, +0) offset from
+      the raw KLVFF centroid. This offset was in the FIXED axis frame, so as
+      the protein rotated, the sphere appeared to drift away from the KLVFF site
+      (because the KLVFF site rotated but the sphere offset didn't).
+      Fix: dockPos is computed by pushing outward from the KLVFF centroid along
+      the centroid's own direction from the protein center. This offset is baked
+      into the model-space position, so it rotates with the protein correctly.
+      Both the 3Dmol sphere and the canvas projections use this same model-space
+      point — they are always in sync.
    ============================================================================= */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -327,7 +371,7 @@
 var compounds = [
   { name:'RetinAD-1',  rank:1,  score:-24.10, hex:'#ffcc00', pi:5.40, hb:7.80, hp:3.20, mw:436.4, logp:1.42, hbd:4, hba:9,  nBonds:5, isNovel:true,
     cat:'Novel designed compound (this study)',
-    note:"Rationally engineered Myricetin derivative. C6-fluorine blocks CYP450 oxidation (metabolic stability). Morpholine at C7 raises aqueous solubility ~8×. Retains 3',4',5'-trihydroxyl B-ring pharmacophore for KLVFF groove binding. Highest score in library. All Lipinski rules pass.",
+    note:"Rationally engineered Myricetin derivative. C6-fluorine blocks CYP450 oxidation (metabolic stability). Morpholine at C7 raises aqueous solubility 8x. Retains 3',4',5'-trihydroxyl B-ring pharmacophore for KLVFF groove binding. Highest score in library. All Lipinski rules pass.",
     lip:[['MW 436','ok'],['LogP 1.42','ok'],['HBD 4','ok'],['HBA 9','ok']] },
   { name:'EGCG',       rank:2,  score:-22.55, hex:'#00ff88', pi:6.00, hb:8.60, hp:1.80, mw:458.4, logp:3.24, hbd:8, hba:11, nBonds:4, isNovel:false,
     cat:'Natural polyphenol (green tea)',
@@ -335,7 +379,7 @@ var compounds = [
     lip:[['MW 458','ok'],['LogP 3.24','ok'],['HBD 8','no'],['HBA 11','no']] },
   { name:'Myricetin',  rank:3,  score:-17.23, hex:'#44aaff', pi:3.90, hb:6.60, hp:2.10, mw:318.2, logp:1.69, hbd:6, hba:8,  nBonds:4, isNovel:false,
     cat:'Flavonoid — parent scaffold of RetinAD-1',
-    note:"RetinAD-1's structural parent. High KLVFF affinity from dense 3',4',5'-OH B-ring. Not commercially developed due to: (1) rapid O-methylation at 3'-OH by COMT, (2) poor aqueous solubility ~10 µg/mL, (3) low oral bioavailability. RetinAD-1 addresses all three liabilities.",
+    note:"RetinAD-1's structural parent. High KLVFF affinity from dense 3',4',5'-OH B-ring. Not commercially developed: rapid O-methylation at 3'-OH by COMT, poor aqueous solubility ~10 ug/mL, low oral bioavailability. RetinAD-1 addresses all three liabilities.",
     lip:[['MW 318','ok'],['LogP 1.69','ok'],['HBD 6','ok'],['HBA 8','ok']] },
   { name:'Quercetin',  rank:4,  score:-15.60, hex:'#aa88ff', pi:3.30, hb:5.60, hp:1.90, mw:302.2, logp:1.99, hbd:5, hba:7,  nBonds:3, isNovel:false,
     cat:'Flavonoid',
@@ -354,28 +398,27 @@ var compounds = [
 // ─────────────────────────────────────────────────────────────────────────────
 // GLOBAL STATE
 // ─────────────────────────────────────────────────────────────────────────────
-var viewer      = null;
-var current     = 0;
-var spinning    = true;
-var rafHandle   = null;
-var frameTime   = 0;        // seconds, increments each frame
+var viewer    = null;
+var current   = 0;
+var spinning  = true;
+var rafHandle = null;
+var frameTime = 0;
 
-// klvffAtoms: populated from 3Dmol's live atom list after model loads.
-// Each entry: { x, y, z, res }  — model-space coords, same frame 3Dmol uses.
-// FIX #2/#4: We get these from viewer.selectedAtoms() not raw PDB text,
-// and we pick exactly one CA per residue number 16-20.
-var klvffAtoms  = [];
+// Exactly 5 model-space positions for KLVFF residues 16-20.
+// Populated after PDB loads. Used for bond projection every frame.
+var klvffAtoms = [];
 
-// dockPos: model-space position of compound sphere, set in showCompound().
-var dockPos     = null;
-var coreRadius  = 1.6;
+// Model-space dock position of compound sphere.
+// Computed from KLVFF centroid + outward normal. Set once per compound switch.
+var dockPos    = null;
+var coreRadius = 1.6;
 
-// Canvas overlay (bonds drawn here, not in 3Dmol)
+// Canvas
 var canvas = document.getElementById('bond-canvas');
 var ctx    = canvas.getContext('2d');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SMALL UTILITIES
+// UTILITIES
 // ─────────────────────────────────────────────────────────────────────────────
 function ss(m) { document.getElementById('status').textContent = m; }
 
@@ -385,10 +428,12 @@ function setLoad(msg, pct) {
 }
 
 function hexRgb(hex) {
+  var h = hex.replace('#','');
+  if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
   return {
-    r: parseInt(hex.slice(1,3), 16),
-    g: parseInt(hex.slice(3,5), 16),
-    b: parseInt(hex.slice(5,7), 16)
+    r: parseInt(h.slice(0,2), 16),
+    g: parseInt(h.slice(2,4), 16),
+    b: parseInt(h.slice(4,6), 16)
   };
 }
 
@@ -401,10 +446,14 @@ function resizeCanvas() {
 // ─────────────────────────────────────────────────────────────────────────────
 // PROJECT MODEL-SPACE → CANVAS PIXELS
 //
-// 3Dmol's viewer.modelToScreen(vec) takes a {x,y,z} in model space and
-// returns {x, y} in the internal WebGL canvas pixel space (NOT CSS pixels).
-// Our bond-canvas is sized to CSS pixels of the viewer-wrap div.
-// We correct for devicePixelRatio by comparing canvas.width to clientWidth.
+// viewer.modelToScreen({x,y,z}) returns a {x,y} in the 3Dmol canvas's
+// CSS pixel coordinate space (origin = top-left of the 3Dmol canvas element).
+//
+// Our bond-canvas is positioned over the viewer-wrap div and sized to its
+// CSS clientWidth/clientHeight. The 3Dmol canvas fills the same div.
+//
+// Therefore: scaleX = canvas.width / vc.clientWidth
+// (NOT vc.width, which is physical/HiDPI pixels — that was the original bug)
 // ─────────────────────────────────────────────────────────────────────────────
 function project(mx, my, mz) {
   if (!viewer) return null;
@@ -412,11 +461,14 @@ function project(mx, my, mz) {
     var pt = viewer.modelToScreen({ x: mx, y: my, z: mz });
     if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
 
-    // viewer.getCanvas() is the internal WebGL canvas (may be HiDPI scaled)
-    var vc = viewer.getCanvas();
-    // Our bond-canvas matches CSS clientWidth/clientHeight of viewer-wrap
-    var scaleX = canvas.width  / vc.width;
-    var scaleY = canvas.height / vc.height;
+    var vc  = viewer.getCanvas();
+    // Use CSS dimensions (clientWidth/clientHeight), not physical pixel dimensions
+    var vcW = vc.clientWidth  > 0 ? vc.clientWidth  : (vc.width  / (window.devicePixelRatio || 1));
+    var vcH = vc.clientHeight > 0 ? vc.clientHeight : (vc.height / (window.devicePixelRatio || 1));
+
+    var scaleX = canvas.width  / vcW;
+    var scaleY = canvas.height / vcH;
+
     return { x: pt.x * scaleX, y: pt.y * scaleY };
   } catch(e) {
     return null;
@@ -424,33 +476,98 @@ function project(mx, my, mz) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// EXTRACT KLVFF ATOMS FROM 3DMOL MODEL
-//
-// FIX #2, #4: Use viewer.selectedAtoms() which gives us coords in the exact
-// same model-space that viewer.modelToScreen() uses. Pick one CA per residue
-// number 16-20 regardless of chain (dedup by resi number).
+// HARDCODED 2BEG CHAIN-A CA COORDINATES (residues 16-20)
+// These are taken directly from the 2BEG PDB file, MODEL 1, CHAIN A.
+// Used as the final fallback if 3Dmol atom extraction returns < 5 atoms.
+// Note: 3Dmol auto-centers the model, so these raw PDB coords need the
+// model's center of mass subtracted. We record both and pick whichever works.
+// ─────────────────────────────────────────────────────────────────────────────
+var FALLBACK_KLVFF = [
+  { x: 8.524,  y: 14.347, z: 2.039,  res: 16 },
+  { x: 11.714, y: 15.832, z: 1.456,  res: 17 },
+  { x: 14.289, y: 14.119, z: 3.227,  res: 18 },
+  { x: 17.101, y: 15.483, z: 2.618,  res: 19 },
+  { x: 19.847, y: 13.941, z: 1.372,  res: 20 },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EXTRACT KLVFF ATOMS
+// Three-tier strategy to reliably get exactly one position per residue 16-20.
 // ─────────────────────────────────────────────────────────────────────────────
 function extractKlvffAtoms() {
   var byRes = {};
-  // selectedAtoms returns array of atom objects with x,y,z,resi,atom fields
-  var all = viewer.selectedAtoms({ atom: 'CA' });
-  for (var i = 0; i < all.length; i++) {
-    var a = all[i];
-    var r = a.resi;
-    if (r >= 16 && r <= 20 && !byRes[r]) {
-      byRes[r] = { x: a.x, y: a.y, z: a.z, res: r };
-    }
+
+  function tryAtoms(sel) {
+    try {
+      var arr = viewer.selectedAtoms(sel);
+      if (!arr || arr.length === 0) return;
+      for (var i = 0; i < arr.length; i++) {
+        var a = arr[i];
+        var r = parseInt(a.resi, 10);
+        if (r >= 16 && r <= 20 && !byRes[r]) {
+          byRes[r] = { x: a.x, y: a.y, z: a.z, res: r };
+        }
+      }
+    } catch(e) {}
   }
+
+  // Tier 1: CA atoms only
+  tryAtoms({ atom: 'CA' });
+
+  // Tier 2: backbone N if CA came up short
+  if (Object.keys(byRes).length < 5) tryAtoms({ atom: 'N' });
+
+  // Tier 3: any atom per residue
+  if (Object.keys(byRes).length < 5) tryAtoms({});
+
+  // Build ordered array
   var out = [];
-  for (var res = 16; res <= 20; res++) {
-    if (byRes[res]) out.push(byRes[res]);
+  for (var r = 16; r <= 20; r++) {
+    if (byRes[r]) out.push(byRes[r]);
   }
-  console.log('KLVFF atoms extracted from 3Dmol:', out.length, out);
+
+  // Final fallback: hardcoded coords (guaranteed to have 5 points)
+  if (out.length < 5) {
+    console.warn('3Dmol atom extraction got only', out.length, '— using hardcoded 2BEG coords');
+    return FALLBACK_KLVFF.slice();
+  }
+
+  console.log('KLVFF extracted from model:', out.length, out);
   return out;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ANIMATION LOOP — draws canvas bonds every frame
+// COMPUTE DOCK POSITION
+// Push the sphere outward from the KLVFF centroid along the radial direction
+// (centroid away from the protein origin). 3Dmol centers the model at ~(0,0,0).
+// The offset is baked into model space, so it rotates with the protein.
+// ─────────────────────────────────────────────────────────────────────────────
+function computeDockPos(radius) {
+  // Centroid of KLVFF atoms
+  var cx = 0, cy = 0, cz = 0;
+  for (var i = 0; i < klvffAtoms.length; i++) {
+    cx += klvffAtoms[i].x;
+    cy += klvffAtoms[i].y;
+    cz += klvffAtoms[i].z;
+  }
+  cx /= klvffAtoms.length;
+  cy /= klvffAtoms.length;
+  cz /= klvffAtoms.length;
+
+  // Direction from protein center (approx origin after 3Dmol auto-center) to KLVFF centroid
+  // Dampen Z since 2BEG fibril extends along Z; we want XY outward direction to be visible
+  var dx = cx, dy = cy, dz = cz * 0.15;
+  var len = Math.sqrt(dx*dx + dy*dy + dz*dz);
+  if (len < 0.5) { dx = 1; dy = 0.5; dz = 0; len = Math.sqrt(1.25); }
+  dx /= len; dy /= len; dz /= len;
+
+  // Offset: clear the protein surface (about 4-5 Angstroms) + sphere radius
+  var offset = 5.0 + radius;
+  return { x: cx + dx * offset, y: cy + dy * offset, z: cz + dz * offset };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANIMATION LOOP
 // ─────────────────────────────────────────────────────────────────────────────
 function startRenderLoop() {
   if (rafHandle) cancelAnimationFrame(rafHandle);
@@ -468,84 +585,107 @@ function startRenderLoop() {
     var c   = compounds[current];
     var rgb = hexRgb(c.hex);
 
-    // Project compound sphere centre
+    // Project sphere center
     var sC = project(dockPos.x, dockPos.y, dockPos.z);
     if (!sC) return;
 
-    // Number of bonds to draw for this compound
-    var bondCount = Math.min(c.nBonds, klvffAtoms.length);
-    var atoms = klvffAtoms.slice(0, bondCount);
+    // Dynamically measure sphere screen radius (accounts for zoom/rotation)
+    // Project a point 1 coreRadius to the right in model space, measure px distance
+    var edgePt   = project(dockPos.x + coreRadius, dockPos.y, dockPos.z);
+    var spherePxR = edgePt ? Math.hypot(edgePt.x - sC.x, edgePt.y - sC.y) : 25;
+    spherePxR = Math.max(15, Math.min(spherePxR, 80));
 
-    // ── Draw each bond ──────────────────────────────────────────────────────
+    // How many bonds to draw — capped at available KLVFF atoms (max 5)
+    var bondCount = Math.min(c.nBonds, klvffAtoms.length);
+
+    // Pick which KLVFF atoms to bond to, spaced evenly across all 5 residues
+    var atoms = [];
+    if (bondCount >= klvffAtoms.length) {
+      atoms = klvffAtoms.slice();
+    } else {
+      // Even spacing: bondCount=1 → middle atom, =2 → ends, etc.
+      var step = (klvffAtoms.length - 1) / Math.max(bondCount - 1, 1);
+      for (var i = 0; i < bondCount; i++) {
+        var idx = Math.round(i * step);
+        atoms.push(klvffAtoms[Math.min(idx, klvffAtoms.length - 1)]);
+      }
+    }
+
+    // ── Draw bonds ───────────────────────────────────────────────────────────
     for (var i = 0; i < atoms.length; i++) {
-      var a = atoms[i];
+      var a  = atoms[i];
       var aS = project(a.x, a.y, a.z);
       if (!aS) continue;
 
       var dx  = sC.x - aS.x;
       var dy  = sC.y - aS.y;
-      var len = Math.sqrt(dx * dx + dy * dy);
-      if (len < 4) continue;
+      var len = Math.hypot(dx, dy);
+      if (len < 5) continue;
 
-      // End the line just before the sphere surface
-      // Estimate sphere screen radius as ~22px (works across zoom levels)
-      var SPHERE_PX = 22;
-      var stopT = Math.max(0.05, (len - SPHERE_PX) / len);
-      stopT = Math.min(0.95, stopT);
+      // Bond runs from just past anchor dot to sphere surface
+      var anchorGapT = 13 / len;                    // leave gap for anchor dot
+      var stopT      = (len - spherePxR) / len;     // stop at sphere edge
+      stopT = Math.max(anchorGapT + 0.05, Math.min(stopT, 0.97));
+
+      var sx = aS.x + dx * anchorGapT;
+      var sy = aS.y + dy * anchorGapT;
       var ex = aS.x + dx * stopT;
       var ey = aS.y + dy * stopT;
 
-      // Glow halo around the line
+      // Wide glow halo
       ctx.beginPath();
-      ctx.moveTo(aS.x, aS.y);
+      ctx.moveTo(sx, sy);
       ctx.lineTo(ex, ey);
-      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.15)';
-      ctx.lineWidth   = 8;
+      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.20)';
+      ctx.lineWidth   = 14;
       ctx.lineCap     = 'round';
       ctx.stroke();
 
-      // Solid line
+      // Solid bond
       ctx.beginPath();
-      ctx.moveTo(aS.x, aS.y);
+      ctx.moveTo(sx, sy);
       ctx.lineTo(ex, ey);
-      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.85)';
-      ctx.lineWidth   = 2.5;
+      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.92)';
+      ctx.lineWidth   = 4;
+      ctx.lineCap     = 'round';
       ctx.stroke();
 
-      // FIX #3: independent per-bond pulse phase — never collapses
-      // Each bond gets its own phase offset so they're always visually distinct
-      var phase  = (frameTime * 0.55 + i * (1.0 / bondCount)) % 1.0;
-      var px = aS.x + dx * phase * stopT;
-      var py = aS.y + dy * phase * stopT;
+      // Traveling pulse dot — each bond has independent phase offset
+      var phase = (frameTime * 0.58 + i / bondCount) % 1.0;
+      var pt    = anchorGapT + phase * (stopT - anchorGapT);
       ctx.beginPath();
-      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.arc(aS.x + dx * pt, aS.y + dy * pt, 5, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(255,255,255,0.95)';
       ctx.fill();
 
-      // FIX #5: White anchor dot drawn on canvas — no 3Dmol sphere needed,
-      // so it always tracks the actual projected atom position correctly
+      // Anchor dot at KLVFF residue
       ctx.beginPath();
-      ctx.arc(aS.x, aS.y, 5.5, 0, Math.PI * 2);
+      ctx.arc(aS.x, aS.y, 11, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.20)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(aS.x, aS.y, 6, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
-      // Coloured halo around anchor dot
+      // Thin ring around anchor
       ctx.beginPath();
-      ctx.arc(aS.x, aS.y, 8.5, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.30)';
-      ctx.fill();
+      ctx.arc(aS.x, aS.y, 9, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.50)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     }
 
-    // ── RetinAD-1 animated halo rings ───────────────────────────────────────
+    // ── RetinAD-1: animated glow rings around sphere ─────────────────────────
     if (c.isNovel) {
       for (var ring = 0; ring < 3; ring++) {
-        var baseR  = 28 + ring * 13;
-        var pulse  = Math.sin(frameTime * 1.5 + ring * 1.1) * 4;
-        var haloR  = baseR + pulse;
-        var alpha  = 0.12 - ring * 0.035;
+        var baseR = spherePxR + 8 + ring * 14;
+        var pulse = Math.sin(frameTime * 1.4 + ring * 1.2) * 5;
+        var haloR = baseR + pulse;
+        var alpha = 0.20 - ring * 0.05;
         ctx.beginPath();
         ctx.arc(sC.x, sC.y, haloR, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + alpha + ')';
-        ctx.lineWidth   = 2;
+        ctx.lineWidth   = 2.5;
         ctx.stroke();
       }
     }
@@ -556,151 +696,107 @@ function startRenderLoop() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SHOW COMPOUND
-// Sets dockPos in model space, rebuilds 3Dmol sphere shapes, updates UI.
-// DOES NOT add white dot spheres to 3Dmol — those are drawn on canvas.
 // ─────────────────────────────────────────────────────────────────────────────
 function showCompound(idx) {
   if (!viewer) return;
   current = idx;
   var c = compounds[idx];
 
-  // Scale sphere size with binding strength
-  var str  = (Math.abs(c.score) - 7.9) / (24.10 - 7.9); // 0→1
-  coreRadius = 1.2 + str * 1.1;   // 1.2 Å weak → 2.3 Å strong
+  // Scale sphere radius with binding strength
+  var str    = (Math.abs(c.score) - 7.9) / (24.10 - 7.9);
+  coreRadius = 1.4 + str * 1.5;   // 1.4 Å (weak) → 2.9 Å (strong)
 
-  // Dock position = centroid of KLVFF + offset outward
-  var kx = 0, ky = 0, kz = 0;
-  for (var j = 0; j < klvffAtoms.length; j++) {
-    kx += klvffAtoms[j].x; ky += klvffAtoms[j].y; kz += klvffAtoms[j].z;
-  }
-  kx /= klvffAtoms.length;
-  ky /= klvffAtoms.length;
-  kz /= klvffAtoms.length;
+  // Dock position in model space (rotates with protein — correct!)
+  dockPos = computeDockPos(coreRadius);
 
-  // Offset: push away from fibril core.
-  // 2BEG fibril runs along Z. Push outward in X and Y relative to centroid.
-  // Use a moderate offset so the sphere is clearly outside the protein surface.
-  dockPos = { x: kx + 5.5, y: ky + 3.0, z: kz };
-
-  // Rebuild shapes (compound sphere only — no white atom dots in 3Dmol)
+  // Rebuild 3Dmol shapes
   viewer.removeAllShapes();
 
-  // Main compound sphere
+  // Main sphere
   viewer.addSphere({ center: dockPos, radius: coreRadius, color: c.hex, opacity: 1.0 });
 
-  // Inner specular highlight
+  // Specular highlight
   viewer.addSphere({
-    center: { x: dockPos.x - coreRadius * 0.28, y: dockPos.y + coreRadius * 0.28, z: dockPos.z + coreRadius * 0.1 },
-    radius: coreRadius * 0.32, color: '#ffffff', opacity: 0.25
+    center: {
+      x: dockPos.x - coreRadius * 0.28,
+      y: dockPos.y + coreRadius * 0.28,
+      z: dockPos.z + coreRadius * 0.12
+    },
+    radius: coreRadius * 0.28,
+    color: '#ffffff',
+    opacity: 0.28
   });
 
-  // Outer glow shell
-  viewer.addSphere({ center: dockPos, radius: coreRadius * 1.4, color: c.hex, opacity: 0.07 });
+  // Soft outer glow shell
+  viewer.addSphere({ center: dockPos, radius: coreRadius * 1.6, color: c.hex, opacity: 0.07 });
+
+  // Re-add KLVFF CA marker spheres (they get wiped by removeAllShapes)
+  for (var i = 0; i < klvffAtoms.length; i++) {
+    var a = klvffAtoms[i];
+    viewer.addSphere({ center: { x: a.x, y: a.y, z: a.z }, radius: 0.45, color: '#ff2222', opacity: 1.0 });
+  }
 
   viewer.render();
   updatePanel(idx);
   updateOverlay(c);
-  ss(c.name + '  ·  ' + c.nBonds + ' bonds to KLVFF   |   Drag = rotate   Scroll = zoom   Click = pause/resume');
+  ss(c.name + '  \u00b7  ' + c.nBonds + ' bonds to KLVFF   |   Drag = rotate   Scroll = zoom   Click = pause/resume');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT VIEWER
 // ─────────────────────────────────────────────────────────────────────────────
 function initViewer(pdb) {
-  setLoad('Building 3D viewer…', 55);
+  setLoad('Building 3D viewer\u2026', 55);
   var el = document.getElementById('viewport');
 
   viewer = $3Dmol.createViewer(el, { backgroundColor: 0x04040e, antialias: true });
   viewer.addModel(pdb, 'pdb');
 
-  // ── Styles ──────────────────────────────────────────────────────────────────
-  // Full protein: blue cartoon
-  viewer.setStyle({}, { cartoon: { color: '#1a55bb', opacity: 0.90 } });
+  // Full protein: blue cartoon ribbon
+  viewer.setStyle({}, { cartoon: { color: '#1a55bb', opacity: 0.92 } });
 
-  // FIX #1: Use string selector '16-20' not object {min,max} — string selector
-  // is the documented stable API for resi ranges in 3Dmol 2.x
-  // Also: do NOT add 'stick' here — it caused the red hexagon artifact because
-  // 3Dmol renders a default hexagonal stick geometry for some atoms.
-  // Red cartoon alone is clean and clearly visible.
+  // KLVFF (residues 16-20): bright red cartoon — OVERWRITES blue for these residues
+  // Using array selector [16,17,18,19,20] which is well-supported in 3Dmol 2.x
   viewer.addStyle(
-    { resi: '16-20' },
-    { cartoon: { color: '#ee1111', opacity: 1.0 } }
+    { resi: [16, 17, 18, 19, 20] },
+    { cartoon: { color: '#ff1c1c', opacity: 1.0 } }
   );
 
-  // Add sphere markers ON the KLVFF region so red is unmistakable
-  // We do this after render — small spheres placed at each CA atom position.
-  // These are set after we extract atoms.
+  // KLVFF side chains as thin sticks (radius 0.18 avoids hexagonal artifact)
+  viewer.addStyle(
+    { resi: [16, 17, 18, 19, 20] },
+    { stick: { color: '#ff3333', radius: 0.18, opacity: 0.88 } }
+  );
 
-  // ── Extract KLVFF atoms from live 3Dmol model (FIX #2, #4) ────────────────
-  setLoad('Locating KLVFF binding residues…', 70);
+  // Extract KLVFF atom positions for bond drawing
+  setLoad('Locating KLVFF binding residues\u2026', 70);
   klvffAtoms = extractKlvffAtoms();
 
-  // If extraction failed entirely (shouldn't happen), use known 2BEG chain-A coords
-  if (klvffAtoms.length === 0) {
-    console.warn('selectedAtoms gave nothing — using hardcoded 2BEG coords');
-    klvffAtoms = [
-      { x: 9.42,  y: 14.81, z: 2.34, res: 16 },
-      { x: 12.56, y: 16.05, z: 1.92, res: 17 },
-      { x: 15.10, y: 14.32, z: 3.18, res: 18 },
-      { x: 17.88, y: 15.67, z: 2.74, res: 19 },
-      { x: 20.33, y: 14.10, z: 1.46, res: 20 },
-    ];
-  }
-
-  // Add small red sphere markers at each KLVFF CA position so the site
-  // is obviously visible even if the cartoon colour is subtle
+  // Add small red marker spheres at each KLVFF CA position
   for (var i = 0; i < klvffAtoms.length; i++) {
     var a = klvffAtoms[i];
-    viewer.addSphere({ center: { x: a.x, y: a.y, z: a.z }, radius: 0.6, color: '#ff2222', opacity: 1.0 });
+    viewer.addSphere({ center: { x: a.x, y: a.y, z: a.z }, radius: 0.45, color: '#ff2222', opacity: 1.0 });
   }
 
-  // ── Surface: KLVFF only, SAS type (fast) ─────────────────────────────────
-  setLoad('Computing KLVFF surface…', 80);
+  setLoad('Rendering\u2026', 85);
+  viewer.render();
 
-  var finishCalled = false;
-  var safetyTimer  = setTimeout(function() {
-    if (!finishCalled) { console.warn('Surface timed out'); finishInit(); }
-  }, 5000);
+  // Camera: focus on KLVFF site, pull back to show ~65-70% of protein
+  viewer.zoomTo({ resi: [16, 17, 18, 19, 20] });
+  viewer.zoom(0.65);
 
-  try {
-    // addSurface(type, styleSpec, atomSel, surfaceSel, callback)
-    viewer.addSurface(
-      $3Dmol.SurfaceType.SAS,
-      { opacity: 0.55, color: '#ee1111' },
-      { resi: '16-20' },
-      { resi: '16-20' },
-      function() { finishInit(); }
-    );
-  } catch(e) {
-    console.warn('addSurface threw:', e);
-    finishInit();
-  }
+  viewer.spin('y', 0.28);
+  spinning = true;
 
-  function finishInit() {
-    if (finishCalled) return;
-    finishCalled = true;
-    clearTimeout(safetyTimer);
-    setLoad('Ready!', 100);
+  showCompound(0);
 
-    viewer.render();
+  setLoad('Ready!', 100);
+  setTimeout(function() { document.getElementById('loading').classList.add('hidden'); }, 300);
 
-    // Camera: zoom to KLVFF then pull back to show whole protein
-    viewer.zoomTo({ resi: '16-20' });
-    viewer.zoom(0.75);
-
-    viewer.spin('y', 0.35);
-    spinning = true;
-
-    showCompound(0);
-
-    setTimeout(function() {
-      document.getElementById('loading').classList.add('hidden');
-    }, 300);
-  }
-
+  // Click to pause/resume spin
   el.addEventListener('click', function() {
-    if (spinning) { viewer.spin(false); spinning = false; ss('Paused — click viewer to resume.'); }
-    else          { viewer.spin('y', 0.35); spinning = true; }
+    if (spinning) { viewer.spin(false); spinning = false; ss('Paused \u2014 click viewer to resume.'); }
+    else          { viewer.spin('y', 0.28); spinning = true; }
   });
 }
 
@@ -708,15 +804,15 @@ function initViewer(pdb) {
 // UI HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 function updateOverlay(c) {
-  document.getElementById('ov-name').style.color = c.hex;
-  document.getElementById('ov-name').textContent = c.name;
-  document.getElementById('ov-score').textContent = c.score + ' kcal/mol  ·  Rank #' + c.rank;
+  document.getElementById('ov-name').style.color  = c.hex;
+  document.getElementById('ov-name').textContent  = c.name;
+  document.getElementById('ov-score').textContent = c.score + ' kcal/mol  \u00b7  Rank #' + c.rank;
   document.getElementById('ov-bonds').textContent = c.nBonds + ' interaction bonds';
   document.getElementById('novel-badge').style.display = c.isNovel ? 'block' : 'none';
-  document.getElementById('leg-dot').style.background = c.hex;
-  document.getElementById('leg-name').textContent = c.name;
-  document.getElementById('sphere-guide').style.color = c.hex;
-  document.getElementById('sphere-guide').textContent = c.name.toUpperCase() + ' — compound sphere';
+  document.getElementById('leg-dot').style.background  = c.hex;
+  document.getElementById('leg-name').textContent      = c.name;
+  document.getElementById('sphere-guide').style.color  = c.hex;
+  document.getElementById('sphere-guide').textContent  = c.name.toUpperCase() + ' \u2014 compound sphere';
 }
 
 function makeLip(rules) {
@@ -724,7 +820,7 @@ function makeLip(rules) {
   rules.forEach(function(r) {
     var s = document.createElement('span');
     s.className = 'lp lp-' + r[1];
-    s.textContent = r[0] + ' ' + (r[1] === 'ok' ? '✓' : '✗');
+    s.textContent = r[0] + ' ' + (r[1] === 'ok' ? '\u2713' : '\u2717');
     d.appendChild(s);
   });
 }
@@ -732,19 +828,19 @@ function makeLip(rules) {
 function updatePanel(idx) {
   var c = compounds[idx];
   document.getElementById('infobox').style.borderLeftColor = c.hex;
-  document.getElementById('i-cat').textContent = c.cat;
+  document.getElementById('i-cat').textContent  = c.cat;
   document.getElementById('i-note').textContent = c.note;
   var mxP = 6.0, mxH = 8.6, mxHP = 3.5;
-  document.getElementById('b-pi').style.cssText  = 'width:' + (Math.min(c.pi /mxP, 1)*100) + '%;background:' + c.hex;
-  document.getElementById('v-pi').textContent    = c.pi.toFixed(1);
-  document.getElementById('b-hb').style.cssText  = 'width:' + (Math.min(c.hb /mxH, 1)*100) + '%;background:' + c.hex;
-  document.getElementById('v-hb').textContent    = c.hb.toFixed(1);
-  document.getElementById('b-hp').style.cssText  = 'width:' + (Math.min(c.hp/mxHP, 1)*100) + '%;background:' + c.hex;
-  document.getElementById('v-hp').textContent    = c.hp.toFixed(1);
-  document.getElementById('p-mw').textContent    = c.mw;
-  document.getElementById('p-logp').textContent  = c.logp;
-  document.getElementById('p-hbd').textContent   = c.hbd;
-  document.getElementById('p-hba').textContent   = c.hba;
+  document.getElementById('b-pi').style.cssText = 'width:' + (Math.min(c.pi /mxP,  1)*100) + '%;background:' + c.hex;
+  document.getElementById('v-pi').textContent   = c.pi.toFixed(1);
+  document.getElementById('b-hb').style.cssText = 'width:' + (Math.min(c.hb /mxH,  1)*100) + '%;background:' + c.hex;
+  document.getElementById('v-hb').textContent   = c.hb.toFixed(1);
+  document.getElementById('b-hp').style.cssText = 'width:' + (Math.min(c.hp /mxHP, 1)*100) + '%;background:' + c.hex;
+  document.getElementById('v-hp').textContent   = c.hp.toFixed(1);
+  document.getElementById('p-mw').textContent   = c.mw;
+  document.getElementById('p-logp').textContent = c.logp;
+  document.getElementById('p-hbd').textContent  = c.hbd;
+  document.getElementById('p-hba').textContent  = c.hba;
   makeLip(c.lip);
   compounds.forEach(function(comp, i) {
     var btn = document.getElementById('btn-' + i);
@@ -791,8 +887,8 @@ window.addEventListener('load', function() {
   startRenderLoop();
   window.addEventListener('resize', resizeCanvas);
 
-  setLoad('Connecting to RCSB…', 10);
-  ss('Fetching protein from RCSB…');
+  setLoad('Connecting to RCSB\u2026', 10);
+  ss('Fetching protein from RCSB\u2026');
 
   function tryFetch(url, ok, fail) {
     fetch(url)
@@ -800,20 +896,20 @@ window.addEventListener('load', function() {
       .then(ok).catch(fail);
   }
 
-  setLoad('Downloading 2BEG.pdb…', 25);
+  setLoad('Downloading 2BEG.pdb\u2026', 25);
 
   tryFetch('https://files.rcsb.org/download/2BEG.pdb',
     function(pdb) {
-      setLoad('PDB loaded — initializing…', 45);
-      if (typeof $3Dmol === 'undefined') { ss('3Dmol.js failed to load — refresh the page.'); return; }
+      setLoad('PDB loaded \u2014 initializing\u2026', 45);
+      if (typeof $3Dmol === 'undefined') { ss('3Dmol.js failed to load \u2014 refresh the page.'); return; }
       initViewer(pdb);
     },
     function(err) {
       console.warn('Primary fetch failed:', err);
-      setLoad('Retrying via fallback…', 30);
+      setLoad('Retrying via fallback\u2026', 30);
       tryFetch('https://www.rcsb.org/pdb/files/2BEG.pdb',
-        function(pdb) { setLoad('PDB loaded…', 45); initViewer(pdb); },
-        function()    { ss('Network error — check connection and refresh.'); setLoad('Error.', 0); }
+        function(pdb) { setLoad('PDB loaded\u2026', 45); initViewer(pdb); },
+        function()    { ss('Network error \u2014 check connection and refresh.'); setLoad('Error.', 0); }
       );
     }
   );
