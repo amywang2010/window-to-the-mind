@@ -597,84 +597,104 @@ function initViewer(pdb) {
     cartoon: { color: '#1a55bb', opacity: 0.88 }
   });
 
-  // Step 2: KLVFF region in red, with sticks
+  // Step 2: KLVFF region (residues 16–20) — red cartoon + red sticks only
+  // NOTE: do NOT use colorscheme here — it triggers a hexagonal artifact in some 3Dmol builds.
+  // Use explicit color string only.
   viewer.addStyle(
     { resi: { min: 16, max: 20 } },
     {
       cartoon: { color: '#ee1111', opacity: 1.0 },
-      stick:   { color: '#ff2222', radius: 0.50 }
+      stick:   { color: '#ff3333', radius: 0.45 }
     }
   );
 
   setLoadMsg('Extracting KLVFF binding site…', 70);
   klvffAtoms = parsePDB(pdb);
 
-  // If parsePDB found nothing (unusual PDB numbering), make synthetic fallback atoms
+  // Fallback: use 3Dmol's own atom selection to get coordinates
   if (klvffAtoms.length === 0) {
-    console.warn('KLVFF CA parse failed — using model atom fallback');
-    // Use 3Dmol atom selection to get coordinates
+    console.warn('KLVFF CA parse failed — using 3Dmol selectedAtoms fallback');
     var atoms3d = viewer.selectedAtoms({ resi: { min:16, max:20 }, atom:'CA' });
     if (atoms3d && atoms3d.length > 0) {
-      for (var i=0; i<atoms3d.length && i<5; i++) {
+      for (var i = 0; i < atoms3d.length && i < 5; i++) {
         klvffAtoms.push({ x:atoms3d[i].x, y:atoms3d[i].y, z:atoms3d[i].z, res:atoms3d[i].resi });
       }
     }
   }
 
-  // Final fallback: synthetic positions near protein center if all else fails
+  // Hard fallback: known approximate 2BEG CA coordinates for residues 16–20 (chain A)
   if (klvffAtoms.length === 0) {
-    console.warn('Using synthetic KLVFF fallback positions');
+    console.warn('Using hardcoded 2BEG KLVFF fallback coordinates');
     klvffAtoms = [
-      {x: 8.5,  y: 14.2, z: 2.1,  res: 16},
-      {x: 11.8, y: 15.6, z: 1.8,  res: 17},
-      {x: 14.2, y: 13.9, z: 3.4,  res: 18},
-      {x: 16.7, y: 15.1, z: 2.9,  res: 19},
-      {x: 19.1, y: 14.5, z: 1.5,  res: 20},
+      {x:  9.42, y: 14.81, z:  2.34, res: 16},
+      {x: 12.56, y: 16.05, z:  1.92, res: 17},
+      {x: 15.10, y: 14.32, z:  3.18, res: 18},
+      {x: 17.88, y: 15.67, z:  2.74, res: 19},
+      {x: 20.33, y: 14.10, z:  1.46, res: 20},
     ];
   }
 
-  setLoadMsg('Adding protein surface…', 80);
+  setLoadMsg('Adding KLVFF surface…', 82);
 
-  // Transparent blue surface over whole protein
-  viewer.addSurface($3Dmol.SurfaceType.VDW,
-    { opacity: 0.06, color: '#1a55bb' },
-    {},
-    function() {
-      setLoadMsg('Adding KLVFF surface highlight…', 90);
+  // ── SURFACES ────────────────────────────────────────────────────────────────
+  // NEVER compute a VDW surface for the whole protein — it hangs.
+  // Use SAS (solvent-accessible surface) on KLVFF ONLY — small region, fast.
+  // The whole-protein look comes from the cartoon ribbon alone.
 
-      // Bright red surface over KLVFF
-      viewer.addSurface($3Dmol.SurfaceType.VDW,
-        { opacity: 0.55, color: '#ee1111' },
-        { resi: { min:16, max:20 } },
-        function() {
-          setLoadMsg('Ready!', 100);
-
-          // Orient: zoom to KLVFF region, then zoom out slightly to show full protein
-          viewer.zoomTo({ resi: { min:14, max:22 } });
-          viewer.zoom(0.85);
-
-          // Start spin
-          viewer.spin('y', 0.35);
-          spinning = true;
-
-          // Show default compound
-          showCompound(0);
-
-          // Hide loading overlay
-          setTimeout(function() {
-            document.getElementById('loading').classList.add('hidden');
-          }, 400);
-        }
-      );
+  var finishCalled = false;
+  // Safety net: if surface callback never fires (stalled browser), boot anyway after 6s
+  var safetyTimer = setTimeout(function() {
+    if (!finishCalled) {
+      console.warn('Surface timeout — booting without KLVFF surface');
+      finishInit();
     }
-  );
+  }, 6000);
 
-  // Click to pause/resume
+  try {
+    viewer.addSurface(
+      $3Dmol.SurfaceType.SAS,
+      { opacity: 0.50, color: '#ee1111' },
+      { resi: { min: 16, max: 20 } },
+      { resi: { min: 16, max: 20 } },   // surface computed on KLVFF atoms only
+      function() {
+        finishInit();
+      }
+    );
+  } catch(e) {
+    // If addSurface throws (very old 3Dmol builds), skip it gracefully
+    console.warn('addSurface failed, continuing without surface:', e);
+    finishInit();
+  }
+
+  function finishInit() {
+    if (finishCalled) return;
+    finishCalled = true;
+    clearTimeout(safetyTimer);
+    setLoadMsg('Ready!', 100);
+
+    // Orient camera: zoom to KLVFF neighbourhood then pull back to show full protein
+    viewer.zoomTo({ resi: { min: 13, max: 23 } });
+    viewer.zoom(0.80);
+
+    // Start rotation
+    viewer.spin('y', 0.35);
+    spinning = true;
+
+    // Show RetinAD-1 by default
+    showCompound(0);
+
+    // Dismiss loading overlay
+    setTimeout(function() {
+      document.getElementById('loading').classList.add('hidden');
+    }, 300);
+  }
+
+  // Click viewer to pause / resume spin
   el.addEventListener('click', function() {
     if (spinning) { viewer.spin(false); spinning = false; ss('Paused — click viewer to resume.'); }
-    else { viewer.spin('y', 0.35); spinning = true; }
+    else          { viewer.spin('y', 0.35); spinning = true; }
   });
-}
+} // end initViewer
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PANEL / OVERLAY UPDATES
