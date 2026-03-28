@@ -469,27 +469,50 @@ var FALLBACK_KLVFF = [
 
 function extractKlvffAtoms() {
   var byRes = {};
-  function tryAtoms(sel) {
-    try {
-      var arr = viewer.selectedAtoms(sel);
-      if (!arr) return;
-      for (var i = 0; i < arr.length; i++) {
-        var a = arr[i], r = parseInt(a.resi, 10);
-        if (r >= 16 && r <= 20 && !byRes[r])
-          byRes[r] = { x:a.x, y:a.y, z:a.z, res:r };
-      }
-    } catch(e) {}
+
+  function ingest(arr) {
+    if (!arr || !arr.length) return;
+    for (var i = 0; i < arr.length; i++) {
+      var a = arr[i];
+      var r = parseInt(a.resi, 10);
+      if (r >= 16 && r <= 20 && !byRes[r] &&
+          typeof a.x === 'number' && isFinite(a.x))
+        byRes[r] = { x:a.x, y:a.y, z:a.z, res:r };
+    }
   }
-  tryAtoms({ atom:'CA' });
-  if (Object.keys(byRes).length < 5) tryAtoms({ atom:'N' });
-  if (Object.keys(byRes).length < 5) tryAtoms({});
+
+  // Try every known way to get atoms from 3Dmol 2.x
+  var m;
+  try { m = viewer.getModel(0); } catch(e) {}
+  if (!m) { try { m = viewer.getModel(); } catch(e) {} }
+
+  if (m) {
+    // selectedAtoms with CA name
+    try { ingest(m.selectedAtoms({ atom:'CA' })); } catch(e) {}
+    // selectedAtoms with no filter (all atoms) - then we filter by resi above
+    if (Object.keys(byRes).length < 5) {
+      try { ingest(m.selectedAtoms({})); } catch(e) {}
+    }
+    // Direct access to model's atom array
+    if (Object.keys(byRes).length < 5 && m.atoms) {
+      try { ingest(m.atoms); } catch(e) {}
+    }
+  }
+
+  // viewer-level selectedAtoms (older 3Dmol)
+  if (Object.keys(byRes).length < 5) {
+    try { ingest(viewer.selectedAtoms({ atom:'CA' })); } catch(e) {}
+    try { ingest(viewer.selectedAtoms({})); } catch(e) {}
+  }
+
   var out = [];
   for (var r = 16; r <= 20; r++) if (byRes[r]) out.push(byRes[r]);
+  console.log('[KLVFF] extracted', out.length, 'atoms:', JSON.stringify(out));
+
   if (out.length < 5) {
-    console.warn('Falling back to hardcoded 2BEG coords, got', out.length);
+    console.warn('[KLVFF] using hardcoded fallback');
     return FALLBACK_KLVFF.slice();
   }
-  console.log('KLVFF atoms from model:', out.length, out);
   return out;
 }
 
@@ -540,21 +563,23 @@ function startRenderLoop() {
     var spxR = edgePt ? Math.hypot(edgePt.x-sC.x, edgePt.y-sC.y) : 25;
     spxR = Math.max(10, Math.min(spxR, 100));
 
-    // Traveling dots along each bond
+    // Traveling pulse dots — one per bond, all same speed, evenly phase-offset
     var bondAtoms = pickBondAtoms(c.nBonds);
-    for (var i = 0; i < bondAtoms.length; i++) {
+    var nB = bondAtoms.length;
+    for (var i = 0; i < nB; i++) {
       var aS = project(bondAtoms[i].x, bondAtoms[i].y, bondAtoms[i].z);
       if (!aS) continue;
       var bdx = sC.x - aS.x, bdy = sC.y - aS.y;
       var blen = Math.hypot(bdx, bdy);
       if (blen < 4) continue;
-      // Travel from atom to sphere surface
+      // All dots travel at the same speed (0.55 cycles/sec).
+      // Each bond is offset by 1/nB of a cycle so they don't all bunch together.
+      var phase = (frameTime * 0.55 + i / nB) % 1.0;
+      // Stop dot at sphere surface
       var stopT = Math.max(0.05, (blen - spxR) / blen);
-      var phase = (frameTime * 0.6 + i / bondAtoms.length) % 1.0;
-      var pt = phase * stopT;
-      var px = aS.x + bdx * pt, py = aS.y + bdy * pt;
+      var t = phase * stopT;
       ctx.beginPath();
-      ctx.arc(px, py, 5, 0, Math.PI*2);
+      ctx.arc(aS.x + bdx * t, aS.y + bdy * t, 5, 0, Math.PI*2);
       ctx.fillStyle = 'rgba(255,255,255,0.95)';
       ctx.fill();
     }
@@ -646,22 +671,22 @@ function showCompound(idx) {
     var startY = a.y + ny*0.3;
     var startZ = a.z + nz*0.3;
 
-    // Bond cylinder (solid)
+    // Bond cylinder (solid, thick enough to be clearly visible)
     viewer.addCylinder({
       start:{ x:startX, y:startY, z:startZ },
       end:  { x:endX,   y:endY,   z:endZ   },
-      radius: 0.12,
+      radius: 0.18,
       color: c.hex,
-      opacity: 0.90
+      opacity: 0.95
     });
 
-    // Glow cylinder (wider, translucent)
+    // Glow cylinder (wider, translucent halo)
     viewer.addCylinder({
       start:{ x:startX, y:startY, z:startZ },
       end:  { x:endX,   y:endY,   z:endZ   },
-      radius: 0.22,
+      radius: 0.32,
       color: c.hex,
-      opacity: 0.18
+      opacity: 0.20
     });
 
     // White anchor sphere at the KLVFF atom end
@@ -670,10 +695,10 @@ function showCompound(idx) {
     viewer.addSphere({ center:{ x:a.x, y:a.y, z:a.z }, radius:0.45, color:c.hex, opacity:0.35 });
   }
 
-  // KLVFF site marker dots (always shown, behind bonds)
-  for (var i=0; i<klvffAtoms.length; i++) {
-    var ka = klvffAtoms[i];
-    viewer.addSphere({ center:{ x:ka.x, y:ka.y, z:ka.z }, radius:0.22, color:'#ff2222', opacity:1.0 });
+  // Small red marker dots only on the bonded KLVFF atoms (not all 5 always)
+  for (var i=0; i<bondAtoms.length; i++) {
+    var ka = bondAtoms[i];
+    viewer.addSphere({ center:{ x:ka.x, y:ka.y, z:ka.z }, radius:0.28, color:'#ff3333', opacity:0.85 });
   }
 
   viewer.render();
