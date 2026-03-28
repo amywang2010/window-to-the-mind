@@ -446,7 +446,11 @@ function project(mx, my, mz) {
     var pt = viewer.modelToScreen({ x:mx, y:my, z:mz });
     if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
     var vc = viewer.getCanvas();
-    return { x: pt.x * canvas.width / vc.width, y: pt.y * canvas.height / vc.height };
+    // modelToScreen returns CSS-pixel coords (0..clientWidth).
+    // Our canvas is also sized to clientWidth. So scale = canvas.width / clientWidth.
+    var vcW = vc.clientWidth  || vc.width;
+    var vcH = vc.clientHeight || vc.height;
+    return { x: pt.x * canvas.width / vcW, y: pt.y * canvas.height / vcH };
   } catch(e) { return null; }
 }
 
@@ -522,26 +526,52 @@ function startRenderLoop() {
     var dt = lastT ? Math.min((t-lastT)/1000, 0.05) : 0;
     lastT = t; frameTime += dt;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!viewer || !dockPos) return;
-    var c = compounds[current];
-    if (!c.isNovel) return;   // halos only for RetinAD-1
+    if (!viewer || !dockPos || klvffAtoms.length === 0) return;
+
+    var c   = compounds[current];
+    var rgb = hexRgb(c.hex);
+
+    // Project sphere center
     var sC = project(dockPos.x, dockPos.y, dockPos.z);
     if (!sC) return;
-    // Measure sphere screen radius for halo sizing
+
+    // Measure sphere screen radius
     var edgePt = project(dockPos.x + coreRadius, dockPos.y, dockPos.z);
     var spxR = edgePt ? Math.hypot(edgePt.x-sC.x, edgePt.y-sC.y) : 25;
-    spxR = Math.max(12, Math.min(spxR, 90));
-    var rgb = hexRgb(c.hex);
-    for (var ring=0; ring<3; ring++) {
-      var baseR = spxR + 10 + ring*16;
-      var pulse = Math.sin(frameTime*1.4 + ring*1.2)*5;
-      var haloR = baseR + pulse;
-      var alpha = 0.22 - ring*0.05;
+    spxR = Math.max(10, Math.min(spxR, 100));
+
+    // Traveling dots along each bond
+    var bondAtoms = pickBondAtoms(c.nBonds);
+    for (var i = 0; i < bondAtoms.length; i++) {
+      var aS = project(bondAtoms[i].x, bondAtoms[i].y, bondAtoms[i].z);
+      if (!aS) continue;
+      var bdx = sC.x - aS.x, bdy = sC.y - aS.y;
+      var blen = Math.hypot(bdx, bdy);
+      if (blen < 4) continue;
+      // Travel from atom to sphere surface
+      var stopT = Math.max(0.05, (blen - spxR) / blen);
+      var phase = (frameTime * 0.6 + i / bondAtoms.length) % 1.0;
+      var pt = phase * stopT;
+      var px = aS.x + bdx * pt, py = aS.y + bdy * pt;
       ctx.beginPath();
-      ctx.arc(sC.x, sC.y, haloR, 0, Math.PI*2);
-      ctx.strokeStyle = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+','+alpha+')';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
+      ctx.arc(px, py, 5, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.fill();
+    }
+
+    // Halo rings for RetinAD-1
+    if (c.isNovel) {
+      for (var ring=0; ring<3; ring++) {
+        var baseR = spxR + 10 + ring*16;
+        var pulse = Math.sin(frameTime*1.4 + ring*1.2)*5;
+        var haloR = baseR + pulse;
+        var alpha = 0.22 - ring*0.05;
+        ctx.beginPath();
+        ctx.arc(sC.x, sC.y, haloR, 0, Math.PI*2);
+        ctx.strokeStyle = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+','+alpha+')';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
     }
   }
   frame(0);
@@ -616,26 +646,22 @@ function showCompound(idx) {
     var startY = a.y + ny*0.3;
     var startZ = a.z + nz*0.3;
 
-    // Bond cylinder
+    // Bond cylinder (solid)
     viewer.addCylinder({
       start:{ x:startX, y:startY, z:startZ },
       end:  { x:endX,   y:endY,   z:endZ   },
       radius: 0.12,
       color: c.hex,
-      opacity: 0.90,
-      fromCap: true,
-      toCap:   true
+      opacity: 0.90
     });
 
-    // Thin glow cylinder (slightly wider, low opacity) for glow effect
+    // Glow cylinder (wider, translucent)
     viewer.addCylinder({
       start:{ x:startX, y:startY, z:startZ },
       end:  { x:endX,   y:endY,   z:endZ   },
       radius: 0.22,
       color: c.hex,
-      opacity: 0.18,
-      fromCap: false,
-      toCap:   false
+      opacity: 0.18
     });
 
     // White anchor sphere at the KLVFF atom end
