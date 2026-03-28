@@ -2,83 +2,163 @@
 <html>
 <head>
 <meta charset="utf-8">
+<title>RetinAD-1 · Amyloid-β Binding Viewer</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap');
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:#05050f;font-family:'JetBrains Mono',monospace;color:white;overflow:hidden;}
-  #root{display:flex;flex-direction:column;height:100vh;}
-  #top{display:grid;grid-template-columns:1fr 264px;flex:1;min-height:0;}
-  #viewer-wrap{position:relative;overflow:hidden;}
-  #viewport{width:100%;height:100%;}
 
-  #badge{position:absolute;top:12px;left:12px;background:rgba(2,2,14,0.88);
-    border-radius:10px;padding:10px 16px;pointer-events:none;
-    border:1px solid rgba(255,255,255,0.07);}
-  #ov-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#ffcc00;}
-  #ov-score{font-size:11px;color:#777;margin-top:3px;}
-  #ov-bonds{font-size:10px;color:#3a3a4a;margin-top:2px;}
-  #novel-badge{position:absolute;top:12px;right:12px;
-    background:rgba(255,200,0,0.11);border:1px solid rgba(255,180,0,0.38);
-    border-radius:8px;padding:5px 12px;font-size:10px;color:#ffcc00;
-    font-family:'Syne',sans-serif;font-weight:700;letter-spacing:.07em;
-    pointer-events:none;display:none;}
-  #status{position:absolute;bottom:8px;left:0;right:0;text-align:center;
-    font-size:10px;color:#2a2a3a;letter-spacing:.03em;}
-  #legend{display:flex;gap:14px;position:absolute;bottom:26px;left:12px;font-size:10px;color:#3a3a4a;}
+  :root {
+    --bg: #04040e;
+    --panel: #06060f;
+    --border: rgba(255,255,255,0.05);
+    --dim: #1a1a2e;
+    --muted: #2a2a40;
+    --text-dim: #44445a;
+    --text-mid: #666688;
+    --gold: #ffcc00;
+    --blue-prot: #2266cc;
+    --red-klvff: #ee2222;
+  }
 
-  /* ── right panel ── */
-  #panel{background:#07070e;border-left:1px solid rgba(255,255,255,0.04);
-    padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;}
-  #panel::-webkit-scrollbar{width:3px;}
-  #panel::-webkit-scrollbar-thumb{background:#1a1a28;}
-  .plabel{color:#252535;font-size:9px;letter-spacing:2px;font-family:'Syne',sans-serif;}
-  .cbtn{background:#07070e;border:1px solid #0f0f1e;border-radius:7px;padding:7px 10px;
-    color:#444;cursor:pointer;text-align:left;font-size:11px;
-    font-family:'JetBrains Mono',monospace;transition:all 0.18s;width:100%;position:relative;}
-  .ntag{position:absolute;right:6px;top:50%;transform:translateY(-50%);
-    background:rgba(255,180,0,0.13);border:1px solid rgba(255,180,0,0.3);
-    border-radius:3px;font-size:8px;color:#cc9900;padding:1px 5px;
-    font-family:'Syne',sans-serif;font-weight:700;}
-  #infobox{background:#04040c;border-radius:8px;padding:11px;border-left:3px solid #ffcc00;
-    transition:border-color .25s;overflow:hidden;}
-  #i-cat{font-size:9px;color:#333;margin-bottom:5px;letter-spacing:.05em;text-transform:uppercase;}
-  #i-note{font-size:10px;color:#555;line-height:1.65;}
-  .brow{display:flex;align-items:center;gap:5px;margin-bottom:4px;}
-  .blbl{font-size:9px;color:#333;width:50px;}
-  .bbg{flex:1;background:#0e0e1c;border-radius:3px;height:5px;}
-  .bfill{height:5px;border-radius:3px;transition:width .4s,background .25s;}
-  .bval{font-size:9px;color:#333;width:26px;text-align:right;}
-  .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:7px;}
-  .pcell{background:#080816;border-radius:5px;padding:5px 7px;border:1px solid #0c0c1c;}
-  .pk{font-size:8px;color:#222;margin-bottom:1px;text-transform:uppercase;}
-  .pv{font-size:11px;color:#444;font-weight:600;}
-  #liprow{margin-top:7px;background:#04040c;border-radius:6px;padding:7px;border:1px solid #0c0c1c;}
-  .liplbl{font-size:8px;color:#252535;letter-spacing:.05em;margin-bottom:4px;}
-  .liprules{display:flex;gap:3px;flex-wrap:wrap;}
-  .lp{font-size:8px;padding:2px 5px;border-radius:3px;font-family:'Syne',sans-serif;font-weight:700;}
-  .lp-ok{background:rgba(0,200,100,0.09);border:1px solid rgba(0,200,100,0.18);color:#009955;}
-  .lp-no{background:rgba(220,60,60,0.09);border:1px solid rgba(220,60,60,0.18);color:#bb3333;}
-  #scalebox{background:#04040c;border-radius:6px;padding:8px;font-size:9px;
-    color:#1e1e2e;line-height:1.85;border:1px solid #0a0a1a;}
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); font-family:'JetBrains Mono',monospace; color:#fff; overflow:hidden; height:100vh; }
 
-  /* ── bottom explainer ── */
-  #explainer{background:#060612;border-top:1px solid rgba(255,255,255,0.04);
-    padding:14px 18px;height:200px;overflow-y:auto;display:flex;gap:18px;flex-shrink:0;}
-  #explainer::-webkit-scrollbar{width:3px;}
-  #explainer::-webkit-scrollbar-thumb{background:#1a1a28;}
-  .xcol{flex:1;min-width:0;}
-  .xhead{font-family:'Syne',sans-serif;font-size:10px;font-weight:800;
-    letter-spacing:.1em;margin-bottom:6px;text-transform:uppercase;}
-  .xbody{font-size:10px;color:#4a4a5a;line-height:1.72;}
-  .xbody b{color:#777;font-weight:600;}
-  .tabrow{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;}
-  .tbtn{background:none;border:1px solid #141424;border-radius:5px;padding:3px 8px;
-    font-size:9px;font-family:'Syne',sans-serif;color:#333;cursor:pointer;
-    transition:all .18s;font-weight:700;letter-spacing:.04em;}
-  .tbtn.on{background:rgba(255,204,0,0.10);border-color:rgba(255,204,0,0.35);color:#ccaa00;}
-  .xsec{display:none;}
-  .xsec.on{display:flex;gap:16px;}
-  .vdiv{width:1px;background:rgba(255,255,255,0.035);flex-shrink:0;}
+  #root { display:flex; flex-direction:column; height:100vh; }
+  #top  { display:grid; grid-template-columns:1fr 270px; flex:1; min-height:0; }
+
+  /* ── Viewer ── */
+  #viewer-wrap { position:relative; overflow:hidden; background:#04040e; }
+  #viewport    { width:100%; height:100%; }
+
+  /* Bond canvas — sits OVER 3Dmol, pointer-events none */
+  #bond-canvas {
+    position:absolute; top:0; left:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    z-index:10;
+  }
+
+  /* HUD overlays */
+  #badge {
+    position:absolute; top:14px; left:14px;
+    background:rgba(4,4,20,0.9);
+    border:1px solid rgba(255,255,255,0.07);
+    border-radius:10px; padding:10px 16px;
+    pointer-events:none; z-index:20;
+  }
+  #ov-name  { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; color:var(--gold); }
+  #ov-score { font-size:10px; color:var(--text-mid); margin-top:2px; }
+  #ov-bonds { font-size:10px; color:var(--text-dim); margin-top:1px; }
+
+  #novel-badge {
+    position:absolute; top:14px; right:14px;
+    background:rgba(255,200,0,0.10);
+    border:1px solid rgba(255,180,0,0.38);
+    border-radius:8px; padding:5px 12px;
+    font-size:10px; color:var(--gold);
+    font-family:'Syne',sans-serif; font-weight:700;
+    letter-spacing:.07em; pointer-events:none;
+    display:none; z-index:20;
+  }
+
+  #legend {
+    position:absolute; bottom:30px; left:14px;
+    display:flex; gap:12px; font-size:10px;
+    color:var(--text-dim); z-index:20; pointer-events:none;
+  }
+  .leg-dot { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+
+  #status {
+    position:absolute; bottom:10px; left:0; right:0;
+    text-align:center; font-size:10px; color:var(--muted);
+    letter-spacing:.04em; z-index:20; pointer-events:none;
+  }
+
+  /* Loading overlay */
+  #loading {
+    position:absolute; inset:0; background:var(--bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:50; gap:18px;
+  }
+  #loading.hidden { display:none; }
+  .load-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:800; color:var(--gold); letter-spacing:.1em; }
+  .load-sub   { font-size:10px; color:var(--text-dim); }
+  .load-bar-wrap { width:200px; height:3px; background:var(--dim); border-radius:2px; overflow:hidden; }
+  .load-bar { height:3px; background:var(--gold); border-radius:2px; width:0%; transition:width .4s; }
+
+  /* ── Right Panel ── */
+  #panel {
+    background:var(--panel);
+    border-left:1px solid var(--border);
+    padding:12px; display:flex; flex-direction:column;
+    gap:8px; overflow-y:auto;
+  }
+  #panel::-webkit-scrollbar { width:3px; }
+  #panel::-webkit-scrollbar-thumb { background:var(--dim); }
+
+  .plabel { color:var(--text-dim); font-size:9px; letter-spacing:2px; font-family:'Syne',sans-serif; text-transform:uppercase; }
+
+  .cbtn {
+    background:var(--panel); border:1px solid var(--dim);
+    border-radius:7px; padding:7px 10px; color:#444; cursor:pointer;
+    text-align:left; font-size:11px; font-family:'JetBrains Mono',monospace;
+    transition:all 0.18s; width:100%; position:relative;
+  }
+  .cbtn:hover { background:#0d0d1a; }
+  .ntag {
+    position:absolute; right:6px; top:50%; transform:translateY(-50%);
+    background:rgba(255,180,0,0.13); border:1px solid rgba(255,180,0,0.3);
+    border-radius:3px; font-size:8px; color:#cc9900; padding:1px 5px;
+    font-family:'Syne',sans-serif; font-weight:700;
+  }
+
+  #infobox {
+    background:#04040c; border-radius:8px; padding:11px;
+    border-left:3px solid var(--gold); transition:border-color .25s;
+  }
+  #i-cat  { font-size:9px; color:var(--text-dim); margin-bottom:5px; letter-spacing:.05em; text-transform:uppercase; }
+  #i-note { font-size:10px; color:#555; line-height:1.65; }
+
+  .brow  { display:flex; align-items:center; gap:5px; margin-bottom:4px; }
+  .blbl  { font-size:9px; color:var(--text-dim); width:52px; }
+  .bbg   { flex:1; background:var(--dim); border-radius:3px; height:5px; }
+  .bfill { height:5px; border-radius:3px; transition:width .4s, background .25s; }
+  .bval  { font-size:9px; color:var(--text-dim); width:26px; text-align:right; }
+
+  .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:7px; }
+  .pcell { background:#080816; border-radius:5px; padding:5px 7px; border:1px solid #0c0c1c; }
+  .pk { font-size:8px; color:#222; margin-bottom:1px; text-transform:uppercase; }
+  .pv { font-size:11px; color:#444; font-weight:600; }
+
+  #liprow { margin-top:7px; background:#04040c; border-radius:6px; padding:7px; border:1px solid #0c0c1c; }
+  .liplbl { font-size:8px; color:var(--muted); letter-spacing:.05em; margin-bottom:4px; }
+  .liprules { display:flex; gap:3px; flex-wrap:wrap; }
+  .lp { font-size:8px; padding:2px 5px; border-radius:3px; font-family:'Syne',sans-serif; font-weight:700; }
+  .lp-ok { background:rgba(0,200,100,0.09); border:1px solid rgba(0,200,100,0.18); color:#009955; }
+  .lp-no { background:rgba(220,60,60,0.09); border:1px solid rgba(220,60,60,0.18); color:#bb3333; }
+
+  #scalebox {
+    background:#04040c; border-radius:6px; padding:8px;
+    font-size:9px; color:var(--text-dim); line-height:1.85; border:1px solid #0a0a1a;
+  }
+
+  /* ── Bottom Explainer ── */
+  #explainer {
+    background:#060612; border-top:1px solid var(--border);
+    padding:14px 18px; height:200px; overflow-y:auto;
+    display:flex; gap:18px; flex-shrink:0;
+  }
+  #explainer::-webkit-scrollbar { width:3px; }
+  #explainer::-webkit-scrollbar-thumb { background:var(--dim); }
+  .xcol { flex:1; min-width:0; }
+  .xhead { font-family:'Syne',sans-serif; font-size:10px; font-weight:800; letter-spacing:.1em; margin-bottom:6px; text-transform:uppercase; }
+  .xbody { font-size:10px; color:#4a4a5a; line-height:1.72; }
+  .xbody b { color:#777; font-weight:600; }
+  .tabrow { display:flex; gap:5px; margin-bottom:8px; flex-wrap:wrap; }
+  .tbtn { background:none; border:1px solid #141424; border-radius:5px; padding:3px 8px; font-size:9px; font-family:'Syne',sans-serif; color:#333; cursor:pointer; transition:all .18s; font-weight:700; letter-spacing:.04em; }
+  .tbtn.on { background:rgba(255,204,0,0.10); border-color:rgba(255,204,0,0.35); color:#ccaa00; }
+  .xsec { display:none; }
+  .xsec.on { display:flex; gap:16px; }
+  .vdiv { width:1px; background:rgba(255,255,255,0.035); flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -86,19 +166,29 @@
   <div id="top">
     <div id="viewer-wrap">
       <div id="viewport"></div>
+      <canvas id="bond-canvas"></canvas>
+
+      <!-- Loading overlay -->
+      <div id="loading">
+        <div class="load-title">LOADING AMYLOID-β STRUCTURE</div>
+        <div class="load-sub">Fetching 2BEG.pdb from RCSB…</div>
+        <div class="load-bar-wrap"><div class="load-bar" id="lbar"></div></div>
+        <div class="load-sub" id="load-msg">Connecting…</div>
+      </div>
+
       <div id="badge">
         <div id="ov-name">RetinAD-1</div>
-        <div id="ov-score">-24.10 kcal/mol  Rank #1</div>
+        <div id="ov-score">-24.10 kcal/mol  ·  Rank #1</div>
         <div id="ov-bonds">5 interaction bonds</div>
       </div>
-      <div id="novel-badge">NOVEL DESIGNED COMPOUND</div>
+      <div id="novel-badge">★ NOVEL DESIGNED COMPOUND</div>
+
       <div id="legend">
-        <span style="color:#2a5a8c;">&#9632; Protein</span>
-        <span style="color:#cc2222;margin-left:8px;">&#9632; KLVFF site</span>
-        <span style="margin-left:8px;"><span id="leg-dot" style="color:#ffcc00;">&#9632;</span>
-        <span id="leg-name">RetinAD-1</span></span>
+        <span><span class="leg-dot" style="background:#2266cc;"></span>Protein ribbon</span>
+        <span><span class="leg-dot" style="background:#ee2222;"></span>KLVFF site</span>
+        <span><span class="leg-dot" id="leg-dot" style="background:#ffcc00;"></span><span id="leg-name">RetinAD-1</span></span>
       </div>
-      <div id="status">Fetching 2BEG.pdb from RCSB...</div>
+      <div id="status">Initializing…</div>
     </div>
 
     <div id="panel">
@@ -109,7 +199,7 @@
         <div id="i-note"></div>
         <div style="margin-top:9px;">
           <div class="plabel" style="margin-bottom:4px;">BINDING COMPONENTS</div>
-          <div class="brow"><span class="blbl">pi-stack</span><div class="bbg"><div id="b-pi" class="bfill"></div></div><span id="v-pi" class="bval"></span></div>
+          <div class="brow"><span class="blbl">π-stack</span><div class="bbg"><div id="b-pi" class="bfill"></div></div><span id="v-pi" class="bval"></span></div>
           <div class="brow"><span class="blbl">H-bond</span><div class="bbg"><div id="b-hb" class="bfill"></div></div><span id="v-hb" class="bval"></span></div>
           <div class="brow"><span class="blbl">hydrophob</span><div class="bbg"><div id="b-hp" class="bfill"></div></div><span id="v-hp" class="bval"></span></div>
         </div>
@@ -126,7 +216,7 @@
       </div>
       <div id="scalebox">
         <span style="color:#333;font-family:'Syne',sans-serif;font-weight:700;">SCORE (kcal/mol)</span><br>
-        below -20 &nbsp;Exceptional<br>-15 to -20 &nbsp;Very strong<br>-10 to -15 &nbsp;Strong<br>above -10 &nbsp;&nbsp;Moderate/Weak
+        &lt; -20 &nbsp;&nbsp;Exceptional<br>-15 to -20 &nbsp;Very strong<br>-10 to -15 &nbsp;Strong<br>&gt; -10 &nbsp;&nbsp;&nbsp;Moderate/Weak
       </div>
     </div>
   </div>
@@ -139,76 +229,71 @@
         <button class="tbtn"     onclick="xtab(this,'novel')">Novelty</button>
         <button class="tbtn"     onclick="xtab(this,'limits')">Current drugs</button>
       </div>
-
       <div id="tab-plain" class="xsec on">
         <div class="xcol">
           <div class="xhead" style="color:#ccaa00;">What you are seeing</div>
-          <div class="xbody">The <b>blue ribbon</b> is the amyloid-beta 42 protein — when it clumps, it kills brain cells. The <b>red patch</b> is the KLVFF segment (residues 16-20), the sticky strip that initiates clumping.<br><br>The <b>glowing sphere</b> is RetinAD-1. The <b>lines</b> are molecular bonds — it grips the KLVFF strip and physically blocks clumping. More lines = stronger grip.</div>
+          <div class="xbody">The <b>blue ribbon</b> is the amyloid-beta 42 protein — when it clumps, it kills brain cells. The <b>red patch</b> is the KLVFF segment (residues 16–20), the sticky strip that initiates clumping.<br><br>The <b>glowing sphere</b> is RetinAD-1. The <b>lines</b> are molecular bonds — it grips the KLVFF strip and physically blocks clumping. More lines = stronger grip.</div>
         </div>
         <div class="vdiv"></div>
         <div class="xcol">
           <div class="xhead" style="color:#ccaa00;">How it actually works</div>
-          <div class="xbody">RetinAD-1 is designed to be taken <b>systemically</b> (orally or injected) and reach the brain — the same route as all modern amyloid drugs. It is <b>not</b> an eye drop. The retina is where the AI detects the disease early; the drug then targets the same protein causing damage in the brain.<br><br>Think of it as: the AI is the smoke detector, RetinAD-1 is the fire extinguisher.</div>
+          <div class="xbody">RetinAD-1 is designed to be taken <b>systemically</b> (orally or injected) and reach the brain. The retina is where AI detects the disease early; the drug then targets the same protein causing damage in the brain.<br><br>Think of it as: the AI is the smoke detector, RetinAD-1 is the fire extinguisher.</div>
         </div>
       </div>
-
       <div id="tab-sci" class="xsec">
         <div class="xcol">
           <div class="xhead" style="color:#44aaff;">Binding mechanism</div>
-          <div class="xbody">Abeta-42 aggregation is nucleated at KLVFF (Lys16-Phe20) via cross-beta-sheet stacking. RetinAD-1 disrupts this via: (1) pi-pi stacking of its trihydroxyl B-ring against Phe19/Phe20, (2) H-bonding of 3',4',5'-OH to backbone NH of Val18/Leu17, (3) hydrophobic packing of the fluorophenyl region into Val18 groove. PDB: 2BEG (NMR fibril, chain A).</div>
+          <div class="xbody">Abeta-42 aggregation is nucleated at KLVFF (Lys16–Phe20) via cross-β-sheet stacking. RetinAD-1 disrupts this via: (1) π-π stacking of its trihydroxyl B-ring against Phe19/Phe20, (2) H-bonding of 3',4',5'-OH to backbone NH of Val18/Leu17, (3) hydrophobic packing of the fluorophenyl region into the Val18 groove. PDB: 2BEG (NMR fibril, chain A).</div>
         </div>
         <div class="vdiv"></div>
         <div class="xcol">
           <div class="xhead" style="color:#44aaff;">Validation anchor</div>
-          <div class="xbody">EGCG — structurally related polyphenol — reaches the brain in rodent models and reduces amyloid burden in vivo (Rezai-Zadeh et al., 2005; Ehrnhoefer et al., 2008). RetinAD-1 outscores EGCG (-24.10 vs -22.55) on the identical target, with better Lipinski compliance. That published EGCG data is the closest experimental proxy for predicted RetinAD-1 activity.<br><br><b>Next step:</b> ThT fluorescence inhibition assay to test in vitro.</div>
+          <div class="xbody">EGCG — a structurally related polyphenol — reaches the brain in rodent models and reduces amyloid burden in vivo (Rezai-Zadeh 2005; Ehrnhoefer 2008). RetinAD-1 outscores EGCG (−24.10 vs −22.55) on the identical target, with better Lipinski compliance. That published EGCG data is the closest experimental proxy for predicted RetinAD-1 activity.</div>
         </div>
       </div>
-
       <div id="tab-novel" class="xsec">
         <div class="xcol">
           <div class="xhead" style="color:#00aa66;">What is genuinely new</div>
-          <div class="xbody">Myricetin has higher KLVFF affinity than quercetin or curcumin, but is not developed as a drug due to rapid O-methylation (CYP-mediated) and near-zero aqueous solubility (~10 ug/mL).<br><br>RetinAD-1 addresses both: <b>C6-fluorine</b> blocks the primary metabolic oxidation site; <b>morpholine at C7</b> raises solubility ~8x. No published compound applies this combination to myricetin for any amyloid target. That is the specific novelty claim.</div>
+          <div class="xbody">Myricetin has high KLVFF affinity but is not developed as a drug due to rapid O-methylation (CYP-mediated) and near-zero aqueous solubility (~10 µg/mL).<br><br>RetinAD-1 addresses both: <b>C6-fluorine</b> blocks the primary metabolic oxidation site; <b>morpholine at C7</b> raises solubility ~8×. No published compound applies this combination to myricetin for any amyloid target.</div>
         </div>
         <div class="vdiv"></div>
         <div class="xcol">
           <div class="xhead" style="color:#00aa66;">Honest scope</div>
-          <div class="xbody">This is a <b>computational prediction</b>, not a synthesized drug. The scoring is physics-informed, not full MD simulation. The validation is indirect (EGCG analogy + correct FDA drug rankings).<br><br>For a science fair project, this is the correct level of claim. The novelty is the rational design process and the specific structural modifications — not a claim that the drug is ready for trials.</div>
+          <div class="xbody">This is a <b>computational prediction</b>, not a synthesized drug. The scoring is physics-informed docking, not full MD simulation. The validation is indirect (EGCG analogy + correct FDA drug rankings).<br><br>For a science fair project, this is the correct level of claim. The novelty is the rational design process and the specific structural modifications.</div>
         </div>
       </div>
-
       <div id="tab-limits" class="xsec">
         <div class="xcol">
           <div class="xhead" style="color:#cc4433;">Why FDA drugs fall short</div>
-          <div class="xbody"><b>Donepezil and Galantamine</b> inhibit acetylcholinesterase — symptom management only. Their KLVFF scores (-11.24, -7.90) confirm they do nothing to block aggregation. Disease still progresses.<br><br><b>Lecanemab and donanemab</b> (anti-amyloid antibodies) require IV infusion, cost $26K+/year, and carry significant ARIA (brain swelling) risk. Small molecules like RetinAD-1 are orally bioavailable in principle — a major practical advantage.</div>
+          <div class="xbody"><b>Donepezil and Galantamine</b> inhibit acetylcholinesterase — symptom management only. Their KLVFF scores (−11.24, −7.90) confirm they do nothing to block aggregation. Disease still progresses.<br><br><b>Lecanemab and donanemab</b> require IV infusion, cost $26K+/year, and carry significant ARIA (brain swelling) risk. Small molecules like RetinAD-1 are orally bioavailable in principle — a major practical advantage.</div>
         </div>
         <div class="vdiv"></div>
         <div class="xcol">
           <div class="xhead" style="color:#cc4433;">Where RetinAD-1 fits</div>
-          <div class="xbody">RetinAD-1 is in the same <b>mechanistic class</b> as EGCG — a small-molecule amyloid aggregation inhibitor — but with improved drug-likeness. It passes all Lipinski rules; EGCG does not. It has better predicted metabolic stability than Myricetin.<br><br>The research pipeline (AI early detection + drug candidate targeting the same protein) is the genuine contribution. Early detection enables earlier treatment — that is the clinical logic connecting the two parts.</div>
+          <div class="xbody">RetinAD-1 is in the same <b>mechanistic class</b> as EGCG — a small-molecule amyloid aggregation inhibitor — but with improved drug-likeness. It passes all Lipinski rules; EGCG does not. It has better predicted metabolic stability than Myricetin.<br><br>The research pipeline (AI early detection + drug candidate targeting the same protein) is the genuine contribution.</div>
         </div>
       </div>
     </div>
 
     <div class="vdiv"></div>
-
     <div style="flex:0.9;min-width:0;">
       <div class="xhead" style="color:#444;">VIEWER GUIDE</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:4px;">
         <div style="background:#08080f;border-radius:5px;padding:7px;border:1px solid #0f0f1e;">
           <div style="font-size:9px;color:#1e4a7a;font-weight:700;margin-bottom:3px;">BLUE — protein ribbon</div>
-          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Full Abeta-42 fibril. Stacked beta-sheets shown as flat ribbon arrows. Slowly rotating. Translucent blue surface overlay.</div>
+          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Full Aβ-42 fibril. Stacked β-sheets shown as flat ribbon arrows. Slowly rotating.</div>
         </div>
         <div style="background:#08080f;border-radius:5px;padding:7px;border:1px solid #0f0f1e;">
           <div style="font-size:9px;color:#882020;font-weight:700;margin-bottom:3px;">RED — KLVFF site</div>
-          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Residues 16-20, stick model + bright surface. Camera zooms here on load. Most visually prominent region.</div>
+          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Residues 16–20. Stick model + bright surface. Camera zooms here on load.</div>
         </div>
         <div style="background:#08080f;border-radius:5px;padding:7px;border:1px solid #0f0f1e;">
           <div id="sphere-guide" style="font-size:9px;color:#aa8800;font-weight:700;margin-bottom:3px;">GOLD — compound sphere</div>
-          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Solid sphere just outside KLVFF. Larger = stronger binder. White inner highlight. Gold halo on RetinAD-1.</div>
+          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Solid sphere just outside KLVFF. Larger = stronger binder. Gold halo for RetinAD-1.</div>
         </div>
         <div style="background:#08080f;border-radius:5px;padding:7px;border:1px solid #0f0f1e;">
           <div style="font-size:9px;color:#555;font-weight:700;margin-bottom:3px;">LINES — interaction bonds</div>
-          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">One line per KLVFF residue interaction. White dot = atom origin. Lines end at sphere surface cleanly.</div>
+          <div style="font-size:9px;color:#2a2a3a;line-height:1.6;">Canvas-drawn bonds from each KLVFF residue to the compound. Always visible.</div>
         </div>
       </div>
     </div>
@@ -218,63 +303,410 @@
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/3dmol@2.0.1/build/3Dmol-min.js"></script>
 <script>
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOUND DATA
+// ─────────────────────────────────────────────────────────────────────────────
 var compounds = [
-  {name:"RetinAD-1", rank:1,  score:-24.10, hex:"#ffcc00", pi:5.40, hb:7.80, hp:3.20, mw:436.4, logp:1.42, hbd:4, hba:9,  nBonds:5, isNovel:true,
-   cat:"Novel designed compound (this study)",
-   note:"Rationally engineered Myricetin derivative. C6-fluorine blocks CYP450 oxidation (metabolic stability). Morpholine at C7 raises aqueous solubility ~8x. Retains 3',4',5'-trihydroxyl B-ring pharmacophore for KLVFF groove binding. Highest score in library. All Lipinski rules pass.",
-   lip:[["MW 436","ok"],["LogP 1.42","ok"],["HBD 4","ok"],["HBA 9","ok"]]},
-  {name:"EGCG",      rank:2,  score:-22.55, hex:"#00ff88", pi:6.00, hb:8.60, hp:1.80, mw:458.4, logp:3.24, hbd:8, hba:11, nBonds:4, isNovel:false,
-   cat:"Natural polyphenol (green tea)",
-   note:"Highest natural affinity — 6 aromatic rings, 8 H-bond donors. HBD 8 and HBA 11 violate Lipinski (limits oral bioavailability). Rapid hepatic glucuronidation. Key reference: EGCG reduces amyloid in mouse models (Rezai-Zadeh 2005, Ehrnhoefer 2008) — the primary validation anchor for RetinAD-1.",
-   lip:[["MW 458","ok"],["LogP 3.24","ok"],["HBD 8","no"],["HBA 11","no"]]},
-  {name:"Myricetin", rank:3,  score:-17.23, hex:"#44aaff", pi:3.90, hb:6.60, hp:2.10, mw:318.2, logp:1.69, hbd:6, hba:8,  nBonds:4, isNovel:false,
-   cat:"Flavonoid — parent scaffold of RetinAD-1",
-   note:"RetinAD-1's structural parent. High KLVFF affinity from dense 3',4',5'-OH B-ring. Not commercially developed due to: (1) rapid O-methylation at 3'-OH by COMT, (2) poor aqueous solubility ~10 ug/mL, (3) low oral bioavailability. RetinAD-1 addresses all three liabilities.",
-   lip:[["MW 318","ok"],["LogP 1.69","ok"],["HBD 6","ok"],["HBA 8","ok"]]},
-  {name:"Quercetin", rank:4,  score:-15.60, hex:"#aa88ff", pi:3.30, hb:5.60, hp:1.90, mw:302.2, logp:1.99, hbd:5, hba:7,  nBonds:3, isNovel:false,
-   cat:"Flavonoid",
-   note:"Strong binding. Lacks Myricetin's 5'-OH on B-ring — one fewer H-bond donor reduces KLVFF groove complementarity. Experimental anti-aggregation data in literature corroborates ranking.",
-   lip:[["MW 302","ok"],["LogP 1.99","ok"],["HBD 5","ok"],["HBA 7","ok"]]},
-  {name:"Donepezil", rank:9,  score:-11.24, hex:"#ff8844", pi:2.40, hb:1.20, hp:3.10, mw:379.5, logp:4.36, hbd:0, hba:3,  nBonds:2, isNovel:false,
-   cat:"FDA-approved AChE inhibitor",
-   note:"Current standard-of-care AD drug. Mechanism: acetylcholinesterase inhibition (symptomatic). Does not target amyloid aggregation — hence weak KLVFF score. Disease continues to progress on Donepezil. Included to show the mechanistic gap between symptom management and aggregation blockade.",
-   lip:[["MW 380","ok"],["LogP 4.36","ok"],["HBD 0","ok"],["HBA 3","ok"]]},
-  {name:"Galantamine",rank:13,score:-7.90,  hex:"#ff4422", pi:0.90, hb:1.60, hp:2.40, mw:285.4, logp:1.99, hbd:1, hba:3,  nBonds:1, isNovel:false,
-   cat:"FDA-approved AChE inhibitor — scoring control",
-   note:"Weakest KLVFF affinity in library, as expected. Non-amyloid mechanism (AChE). Correct rank at the bottom validates the entire scoring model — confirms it distinguishes aggregation-targeted from non-aggregation-targeted compounds.",
-   lip:[["MW 285","ok"],["LogP 1.99","ok"],["HBD 1","ok"],["HBA 3","ok"]]},
+  { name:"RetinAD-1", rank:1,  score:-24.10, hex:"#ffcc00", pi:5.40, hb:7.80, hp:3.20, mw:436.4, logp:1.42, hbd:4, hba:9,  nBonds:5, isNovel:true,
+    cat:"Novel designed compound (this study)",
+    note:"Rationally engineered Myricetin derivative. C6-fluorine blocks CYP450 oxidation (metabolic stability). Morpholine at C7 raises aqueous solubility ~8×. Retains 3',4',5'-trihydroxyl B-ring pharmacophore for KLVFF groove binding. Highest score in library. All Lipinski rules pass.",
+    lip:[["MW 436","ok"],["LogP 1.42","ok"],["HBD 4","ok"],["HBA 9","ok"]] },
+  { name:"EGCG",      rank:2,  score:-22.55, hex:"#00ff88", pi:6.00, hb:8.60, hp:1.80, mw:458.4, logp:3.24, hbd:8, hba:11, nBonds:4, isNovel:false,
+    cat:"Natural polyphenol (green tea)",
+    note:"Highest natural affinity — 6 aromatic rings, 8 H-bond donors. HBD 8 and HBA 11 violate Lipinski. Rapid hepatic glucuronidation. Key reference: EGCG reduces amyloid in mouse models (Rezai-Zadeh 2005, Ehrnhoefer 2008) — primary validation anchor for RetinAD-1.",
+    lip:[["MW 458","ok"],["LogP 3.24","ok"],["HBD 8","no"],["HBA 11","no"]] },
+  { name:"Myricetin", rank:3,  score:-17.23, hex:"#44aaff", pi:3.90, hb:6.60, hp:2.10, mw:318.2, logp:1.69, hbd:6, hba:8,  nBonds:4, isNovel:false,
+    cat:"Flavonoid — parent scaffold of RetinAD-1",
+    note:"RetinAD-1's structural parent. High KLVFF affinity from dense 3',4',5'-OH B-ring. Not commercially developed due to: (1) rapid O-methylation at 3'-OH by COMT, (2) poor aqueous solubility ~10 µg/mL, (3) low oral bioavailability. RetinAD-1 addresses all three liabilities.",
+    lip:[["MW 318","ok"],["LogP 1.69","ok"],["HBD 6","ok"],["HBA 8","ok"]] },
+  { name:"Quercetin", rank:4,  score:-15.60, hex:"#aa88ff", pi:3.30, hb:5.60, hp:1.90, mw:302.2, logp:1.99, hbd:5, hba:7,  nBonds:3, isNovel:false,
+    cat:"Flavonoid",
+    note:"Strong binding. Lacks Myricetin's 5'-OH on B-ring — one fewer H-bond donor reduces KLVFF groove complementarity. Experimental anti-aggregation data in literature corroborates ranking.",
+    lip:[["MW 302","ok"],["LogP 1.99","ok"],["HBD 5","ok"],["HBA 7","ok"]] },
+  { name:"Donepezil", rank:9,  score:-11.24, hex:"#ff8844", pi:2.40, hb:1.20, hp:3.10, mw:379.5, logp:4.36, hbd:0, hba:3,  nBonds:2, isNovel:false,
+    cat:"FDA-approved AChE inhibitor",
+    note:"Current standard-of-care AD drug. Mechanism: acetylcholinesterase inhibition (symptomatic). Does not target amyloid aggregation — hence weak KLVFF score. Disease continues to progress on Donepezil.",
+    lip:[["MW 380","ok"],["LogP 4.36","ok"],["HBD 0","ok"],["HBA 3","ok"]] },
+  { name:"Galantamine", rank:13, score:-7.90, hex:"#ff4422", pi:0.90, hb:1.60, hp:2.40, mw:285.4, logp:1.99, hbd:1, hba:3, nBonds:1, isNovel:false,
+    cat:"FDA-approved AChE inhibitor — scoring control",
+    note:"Weakest KLVFF affinity in library, as expected. Non-amyloid mechanism (AChE). Correct rank at the bottom validates the entire scoring model.",
+    lip:[["MW 285","ok"],["LogP 1.99","ok"],["HBD 1","ok"],["HBA 3","ok"]] },
 ];
 
-var viewer = null, current = 0;
-function ss(m){ document.getElementById('status').textContent = m; }
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+var viewer = null;
+var current = 0;
+var spinning = true;
+var klvffAtoms = [];   // {x,y,z,res} in PDB space
+var dockPos = null;    // {x,y,z} in PDB space
+var coreRadius = 1.6;  // Ångströms, updated per compound
+var bondAnimHandle = null;
+var bondPhase = 0;
 
-function updateOverlay(c){
+// Canvas overlay for bonds
+var canvas = document.getElementById('bond-canvas');
+var ctx = canvas.getContext('2d');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILITIES
+// ─────────────────────────────────────────────────────────────────────────────
+function ss(m) { document.getElementById('status').textContent = m; }
+
+function setLoadMsg(m, pct) {
+  document.getElementById('load-msg').textContent = m;
+  document.getElementById('lbar').style.width = pct + '%';
+}
+
+function hexToRgb(hex) {
+  var r = parseInt(hex.slice(1,3),16);
+  var g = parseInt(hex.slice(3,5),16);
+  var b = parseInt(hex.slice(5,7),16);
+  return {r:r, g:g, b:b};
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PDB PARSER — extracts CA atoms for residues 16–20 (any chain)
+// ─────────────────────────────────────────────────────────────────────────────
+function parsePDB(pdb) {
+  var out = [], seen = {};
+  var lines = pdb.split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var l = lines[i];
+    if (!l.startsWith('ATOM')) continue;
+    var atom   = l.slice(12,16).trim();
+    var resnum = parseInt(l.slice(22,26).trim());
+    var x = parseFloat(l.slice(30,38));
+    var y = parseFloat(l.slice(38,46));
+    var z = parseFloat(l.slice(46,54));
+    if (atom === 'CA' && resnum >= 16 && resnum <= 20 && !seen[resnum] && !isNaN(x)) {
+      out.push({x:x, y:y, z:z, res:resnum});
+      seen[resnum] = true;
+    }
+  }
+  console.log('KLVFF CA atoms found:', out.length, out);
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROJECT 3D → 2D SCREEN COORDS via 3Dmol internals
+// We use viewer.modelToScreen() which converts model-space → canvas pixels.
+// Falls back gracefully if unavailable.
+// ─────────────────────────────────────────────────────────────────────────────
+function modelToCanvas(x, y, z) {
+  try {
+    var pt = viewer.modelToScreen({x:x, y:y, z:z});
+    if (pt && isFinite(pt.x) && isFinite(pt.y)) {
+      // 3Dmol returns coords in the 3Dmol canvas reference frame.
+      // Scale to our bond-canvas which may differ in DPR.
+      var w = canvas.width;
+      var h = canvas.height;
+      var vw = viewer.getCanvas().width;
+      var vh = viewer.getCanvas().height;
+      return { x: pt.x * (w / vw), y: pt.y * (h / vh) };
+    }
+  } catch(e) {}
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CANVAS BOND RENDERER — runs every animation frame
+// ─────────────────────────────────────────────────────────────────────────────
+function resizeCanvas() {
+  var wrap = document.getElementById('viewer-wrap');
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+
+function drawBonds() {
+  if (bondAnimHandle) cancelAnimationFrame(bondAnimHandle);
+
+  function frame() {
+    bondAnimHandle = requestAnimationFrame(frame);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!viewer || !dockPos || klvffAtoms.length === 0) return;
+
+    var c = compounds[current];
+    var rgb = hexToRgb(c.hex);
+    var bondCount = c.nBonds;
+    var atoms = klvffAtoms.slice(0, bondCount);
+
+    // Project compound sphere center
+    var sCenter = modelToCanvas(dockPos.x, dockPos.y, dockPos.z);
+    if (!sCenter) return;
+
+    bondPhase += 0.012;
+
+    // Draw bonds for each KLVFF atom
+    for (var i = 0; i < atoms.length; i++) {
+      var a = atoms[i];
+      var aScreen = modelToCanvas(a.x, a.y, a.z);
+      if (!aScreen) continue;
+
+      var dx = sCenter.x - aScreen.x;
+      var dy = sCenter.y - aScreen.y;
+      var len = Math.sqrt(dx*dx + dy*dy);
+      if (len < 2) continue;
+
+      // Stop bond line before entering the sphere (estimate sphere screen radius)
+      var stopFrac = Math.max(0.05, (len - 28) / len);
+      stopFrac = Math.min(0.92, stopFrac);
+
+      var ex = aScreen.x + dx * stopFrac;
+      var ey = aScreen.y + dy * stopFrac;
+
+      // --- Draw bond line ---
+      // Outer glow
+      ctx.beginPath();
+      ctx.moveTo(aScreen.x, aScreen.y);
+      ctx.lineTo(ex, ey);
+      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.18)';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Core line
+      ctx.beginPath();
+      ctx.moveTo(aScreen.x, aScreen.y);
+      ctx.lineTo(ex, ey);
+      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.80)';
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+
+      // Animated pulse dot moving along bond
+      var pulse = (bondPhase + i * 0.45) % 1.0;
+      var px = aScreen.x + dx * pulse * stopFrac;
+      var py = aScreen.y + dy * pulse * stopFrac;
+      ctx.beginPath();
+      ctx.arc(px, py, 2.5, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.9)';
+      ctx.fill();
+
+      // White dot at KLVFF atom origin
+      ctx.beginPath();
+      ctx.arc(aScreen.x, aScreen.y, 5, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(aScreen.x, aScreen.y, 8, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.25)';
+      ctx.fill();
+    }
+
+    // Draw compound sphere circle on canvas (as additional visual on top of 3Dmol sphere)
+    if (sCenter) {
+      // Outer halo rings for RetinAD-1
+      if (c.isNovel) {
+        var haloTime = bondPhase * 0.5;
+        for (var ring = 0; ring < 2; ring++) {
+          var haloR = 34 + ring * 14 + Math.sin(haloTime + ring) * 4;
+          var haloAlpha = 0.10 - ring * 0.035;
+          ctx.beginPath();
+          ctx.arc(sCenter.x, sCenter.y, haloR, 0, Math.PI*2);
+          ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + haloAlpha + ')';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  frame();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHOW COMPOUND — updates 3Dmol shapes + redraws bonds
+// ─────────────────────────────────────────────────────────────────────────────
+function showCompound(idx) {
+  if (!viewer) return;
+  current = idx;
+  var c = compounds[idx];
+
+  // Strength 0→1
+  var str = (Math.abs(c.score) - 7.9) / (24.10 - 7.9);
+  coreRadius = 1.1 + str * 1.1;  // 1.1 Å (weakest) → 2.2 Å (strongest)
+
+  // Compute dock position: centroid of KLVFF atoms + outward offset
+  var kx=0, ky=0, kz=0;
+  for (var j=0; j<klvffAtoms.length; j++) { kx+=klvffAtoms[j].x; ky+=klvffAtoms[j].y; kz+=klvffAtoms[j].z; }
+  kx/=klvffAtoms.length; ky/=klvffAtoms.length; kz/=klvffAtoms.length;
+
+  // Offset outward from centroid — in the direction away from protein bulk
+  // 2BEG has the fibril axis mostly along Z; offset in XY plane
+  dockPos = { x: kx + 3.8, y: ky + 2.2, z: kz + 1.5 };
+
+  // Remove old compound shapes (not protein styles)
+  viewer.removeAllShapes();
+
+  // --- Compound sphere in 3Dmol ---
+  viewer.addSphere({
+    center: dockPos,
+    radius: coreRadius,
+    color: c.hex,
+    opacity: 1.0
+  });
+
+  // Inner white highlight
+  viewer.addSphere({
+    center: { x: dockPos.x - coreRadius*0.25, y: dockPos.y + coreRadius*0.25, z: dockPos.z + coreRadius*0.1 },
+    radius: coreRadius * 0.35,
+    color: '#ffffff',
+    opacity: 0.22
+  });
+
+  // Outer glow shell in 3Dmol
+  viewer.addSphere({
+    center: dockPos,
+    radius: coreRadius * 1.35,
+    color: c.hex,
+    opacity: 0.08
+  });
+
+  // KLVFF atom marker spheres (small white dots) in 3Dmol
+  var bondAtoms = klvffAtoms.slice(0, c.nBonds);
+  for (var i=0; i<bondAtoms.length; i++) {
+    var a = bondAtoms[i];
+    viewer.addSphere({ center:{x:a.x,y:a.y,z:a.z}, radius:0.45, color:'#ffffff', opacity:1.0 });
+    viewer.addSphere({ center:{x:a.x,y:a.y,z:a.z}, radius:0.70, color:c.hex, opacity:0.25 });
+  }
+
+  viewer.render();
+  updatePanel(idx);
+  updateOverlay(c);
+  ss(c.name + ' · ' + c.nBonds + ' bonds to KLVFF (16-20)   |   Drag = rotate   Scroll = zoom   Click = pause/resume');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT VIEWER
+// ─────────────────────────────────────────────────────────────────────────────
+function initViewer(pdb) {
+  setLoadMsg('Building 3D viewer…', 55);
+  var el = document.getElementById('viewport');
+
+  viewer = $3Dmol.createViewer(el, {
+    backgroundColor: 0x04040e,
+    antialias: true
+  });
+
+  viewer.addModel(pdb, 'pdb');
+
+  // Step 1: Full protein as blue cartoon
+  viewer.setStyle({}, {
+    cartoon: { color: '#1a55bb', opacity: 0.88 }
+  });
+
+  // Step 2: KLVFF region in red, with sticks
+  viewer.addStyle(
+    { resi: { min: 16, max: 20 } },
+    {
+      cartoon: { color: '#ee1111', opacity: 1.0 },
+      stick:   { color: '#ff2222', radius: 0.50 }
+    }
+  );
+
+  setLoadMsg('Extracting KLVFF binding site…', 70);
+  klvffAtoms = parsePDB(pdb);
+
+  // If parsePDB found nothing (unusual PDB numbering), make synthetic fallback atoms
+  if (klvffAtoms.length === 0) {
+    console.warn('KLVFF CA parse failed — using model atom fallback');
+    // Use 3Dmol atom selection to get coordinates
+    var atoms3d = viewer.selectedAtoms({ resi: { min:16, max:20 }, atom:'CA' });
+    if (atoms3d && atoms3d.length > 0) {
+      for (var i=0; i<atoms3d.length && i<5; i++) {
+        klvffAtoms.push({ x:atoms3d[i].x, y:atoms3d[i].y, z:atoms3d[i].z, res:atoms3d[i].resi });
+      }
+    }
+  }
+
+  // Final fallback: synthetic positions near protein center if all else fails
+  if (klvffAtoms.length === 0) {
+    console.warn('Using synthetic KLVFF fallback positions');
+    klvffAtoms = [
+      {x: 8.5,  y: 14.2, z: 2.1,  res: 16},
+      {x: 11.8, y: 15.6, z: 1.8,  res: 17},
+      {x: 14.2, y: 13.9, z: 3.4,  res: 18},
+      {x: 16.7, y: 15.1, z: 2.9,  res: 19},
+      {x: 19.1, y: 14.5, z: 1.5,  res: 20},
+    ];
+  }
+
+  setLoadMsg('Adding protein surface…', 80);
+
+  // Transparent blue surface over whole protein
+  viewer.addSurface($3Dmol.SurfaceType.VDW,
+    { opacity: 0.06, color: '#1a55bb' },
+    {},
+    function() {
+      setLoadMsg('Adding KLVFF surface highlight…', 90);
+
+      // Bright red surface over KLVFF
+      viewer.addSurface($3Dmol.SurfaceType.VDW,
+        { opacity: 0.55, color: '#ee1111' },
+        { resi: { min:16, max:20 } },
+        function() {
+          setLoadMsg('Ready!', 100);
+
+          // Orient: zoom to KLVFF region, then zoom out slightly to show full protein
+          viewer.zoomTo({ resi: { min:14, max:22 } });
+          viewer.zoom(0.85);
+
+          // Start spin
+          viewer.spin('y', 0.35);
+          spinning = true;
+
+          // Show default compound
+          showCompound(0);
+
+          // Hide loading overlay
+          setTimeout(function() {
+            document.getElementById('loading').classList.add('hidden');
+          }, 400);
+        }
+      );
+    }
+  );
+
+  // Click to pause/resume
+  el.addEventListener('click', function() {
+    if (spinning) { viewer.spin(false); spinning = false; ss('Paused — click viewer to resume.'); }
+    else { viewer.spin('y', 0.35); spinning = true; }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PANEL / OVERLAY UPDATES
+// ─────────────────────────────────────────────────────────────────────────────
+function updateOverlay(c) {
   document.getElementById('ov-name').style.color = c.hex;
   document.getElementById('ov-name').textContent = c.name;
-  document.getElementById('ov-score').textContent = c.score + ' kcal/mol   Rank #' + c.rank;
+  document.getElementById('ov-score').textContent = c.score + ' kcal/mol  ·  Rank #' + c.rank;
   document.getElementById('ov-bonds').textContent = c.nBonds + ' interaction bonds';
   document.getElementById('novel-badge').style.display = c.isNovel ? 'block' : 'none';
-  document.getElementById('leg-dot').style.color = c.hex;
+  document.getElementById('leg-dot').style.background = c.hex;
   document.getElementById('leg-name').textContent = c.name;
   document.getElementById('sphere-guide').style.color = c.hex;
   document.getElementById('sphere-guide').textContent = c.name.toUpperCase() + ' — compound sphere';
 }
 
-function makeLip(rules){
+function makeLip(rules) {
   var d = document.getElementById('lip'); d.innerHTML = '';
-  rules.forEach(function(r){
+  rules.forEach(function(r) {
     var s = document.createElement('span');
     s.className = 'lp ' + (r[1]==='ok' ? 'lp-ok' : 'lp-no');
-    s.textContent = r[0] + ' ' + (r[1]==='ok' ? 'OK' : 'FAIL');
+    s.textContent = r[0] + ' ' + (r[1]==='ok' ? '✓' : '✗');
     d.appendChild(s);
   });
 }
 
-function updatePanel(idx){
+function updatePanel(idx) {
   var c = compounds[idx];
   document.getElementById('infobox').style.borderLeftColor = c.hex;
   document.getElementById('i-cat').textContent = c.cat;
   document.getElementById('i-note').textContent = c.note;
+
   var mxP=6.0, mxH=8.6, mxHP=3.5;
   document.getElementById('b-pi').style.cssText  = 'width:'+(Math.min(c.pi/mxP,1)*100)+'%;background:'+c.hex;
   document.getElementById('v-pi').textContent = c.pi.toFixed(1);
@@ -282,216 +714,111 @@ function updatePanel(idx){
   document.getElementById('v-hb').textContent = c.hb.toFixed(1);
   document.getElementById('b-hp').style.cssText  = 'width:'+(Math.min(c.hp/mxHP,1)*100)+'%;background:'+c.hex;
   document.getElementById('v-hp').textContent = c.hp.toFixed(1);
+
   document.getElementById('p-mw').textContent   = c.mw;
   document.getElementById('p-logp').textContent = c.logp;
   document.getElementById('p-hbd').textContent  = c.hbd;
   document.getElementById('p-hba').textContent  = c.hba;
   makeLip(c.lip);
-  compounds.forEach(function(comp, i){
+
+  compounds.forEach(function(comp, i) {
     var btn = document.getElementById('btn-'+i);
-    if(!btn) return;
-    btn.style.background  = (i===idx) ? comp.hex+'15' : '#07070e';
-    btn.style.borderColor = (i===idx) ? comp.hex+'77' : '#0f0f1e';
+    if (!btn) return;
+    btn.style.background  = (i===idx) ? comp.hex+'15' : '#06060f';
+    btn.style.borderColor = (i===idx) ? comp.hex+'88' : '#1a1a2e';
     btn.style.color       = (i===idx) ? comp.hex : '#444';
-    btn.style.fontWeight  = (i===idx) ? '600' : '400';
+    btn.style.fontWeight  = (i===idx) ? '700' : '400';
   });
 }
 
-/* ── BONDS: use small spheres packed tightly in a line ─────────────
-   3Dmol addCylinder is broken in many builds.
-   A "tube" of overlapping spheres (step 0.22 Å) is indistinguishable
-   visually and always renders correctly.                            */
-function tube(v, x1,y1,z1, x2,y2,z2, r, col, op){
-  var dx=x2-x1, dy=y2-y1, dz=z2-z1;
-  var len = Math.sqrt(dx*dx+dy*dy+dz*dz);
-  if(len < 0.01) return;
-  var step = 0.22;
-  var n = Math.ceil(len/step);
-  for(var i=0; i<=n; i++){
-    var t = i/n;
-    v.addSphere({center:{x:x1+dx*t, y:y1+dy*t, z:z1+dz*t},
-                 radius:r, color:col, opacity:op});
-  }
-}
-
-function showCompound(idx){
-  if(!viewer) return;
-  current = idx;
-  var c = compounds[idx];
-  var str = (Math.abs(c.score) - 7.9) / (24.10 - 7.9); // 0→1
-  var coreR = 1.0 + str * 1.0;  // 1.0 (weakest) → 2.0 (strongest)
-  var tubeR = 0.16 + str * 0.09; // tube sphere radius
-
-  viewer.removeAllShapes();
-
-  var kl = window._klvff;
-  var kx=0,ky=0,kz=0;
-  for(var j=0;j<kl.length;j++){ kx+=kl[j].x; ky+=kl[j].y; kz+=kl[j].z; }
-  kx/=kl.length; ky/=kl.length; kz/=kl.length;
-
-  // Dock center: offset from KLVFF centroid outward from protein surface
-  var dock = {x:kx-4.2, y:ky+3.6, z:kz+0.8};
-
-  var atoms = kl.slice(0, c.nBonds);
-  for(var i=0; i<atoms.length; i++){
-    var a = atoms[i];
-    var dx=dock.x-a.x, dy=dock.y-a.y, dz=dock.z-a.z;
-    var len = Math.sqrt(dx*dx+dy*dy+dz*dz);
-    // Stop the tube just before it enters the sphere (85% of the way)
-    if(len < 0.001) continue;
-    
-    var stop = (len - coreR*0.85) / len;
-    stop = Math.max(0.05, Math.min(0.95, stop));
-    tube(viewer,
-         a.x, a.y, a.z,
-         a.x + dx*stop, a.y + dy*stop, a.z + dz*stop,
-         tubeR, c.hex, 0.95);
-    // White atom dot at KLVFF residue
-    viewer.addSphere({center:{x:a.x,y:a.y,z:a.z}, radius:0.50, color:'#ffffff', opacity:1.0});
-    // Colored halo
-    viewer.addSphere({center:{x:a.x,y:a.y,z:a.z}, radius:0.70, color:c.hex, opacity:0.20});
-  }
-
-  // Compound sphere
-  viewer.addSphere({center:dock, radius:coreR,        color:c.hex,    opacity:1.0});
-  viewer.addSphere({center:dock, radius:coreR*0.38,   color:'#ffffff', opacity:0.18});
-
-  // Gold glow rings for RetinAD-1
-  if(c.isNovel){
-    viewer.addSphere({center:dock, radius:coreR*1.45, color:'#ffcc00', opacity:0.07});
-    viewer.addSphere({center:dock, radius:coreR*1.80, color:'#ffcc00', opacity:0.03});
-  }
-
-  viewer.render();
-  updatePanel(idx);
-  updateOverlay(c);
-  ss(c.name + '  ' + c.nBonds + ' bonds to KLVFF   Drag=rotate  Scroll=zoom  Click=pause');
-}
-
-function buildButtons(){
+// ─────────────────────────────────────────────────────────────────────────────
+// BUILD BUTTONS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildButtons() {
   var cont = document.getElementById('buttons');
-  for(var i=0; i<compounds.length; i++){
-    (function(idx){
+  for (var i = 0; i < compounds.length; i++) {
+    (function(idx) {
       var c = compounds[idx];
       var btn = document.createElement('button');
-      btn.id = 'btn-'+idx;
+      btn.id = 'btn-' + idx;
       btn.className = 'cbtn';
       btn.innerHTML =
-        '<span style="font-family:Syne,sans-serif;font-weight:700;letter-spacing:.02em;">'+c.name+'</span>'+
-        (c.isNovel ? '<span class="ntag">NEW</span>' : '')+
-        '<span style="float:right;font-size:10px;opacity:0.45;">'+c.score+'</span>';
-      btn.onmouseover = function(){ if(idx!==current) btn.style.background='#0d0d18'; };
-      btn.onmouseout  = function(){ if(idx!==current) btn.style.background='#07070e'; };
-      btn.onclick     = function(){ showCompound(idx); };
+        '<span style="font-family:Syne,sans-serif;font-weight:700;letter-spacing:.02em;">' + c.name + '</span>' +
+        (c.isNovel ? '<span class="ntag">NEW</span>' : '') +
+        '<span style="float:right;font-size:10px;opacity:0.45;">' + c.score + '</span>';
+      btn.onclick = function() { showCompound(idx); };
       cont.appendChild(btn);
     })(i);
   }
 }
 
-function parsePDB(pdb){
-  var out=[], seen={};
-  var lines = pdb.split('\n');
-
-  for(var i=0;i<lines.length;i++){
-    var l = lines[i];
-    if(!l.startsWith('ATOM')) continue;
-
-    var atom   = l.slice(12,16).trim();
-    var resnum = parseInt(l.slice(22,26).trim());
-
-    var x = parseFloat(l.slice(30,38));
-    var y = parseFloat(l.slice(38,46));
-    var z = parseFloat(l.slice(46,54));
-
-    // ❗ NO CHAIN FILTER AT ALL
-    if(atom==='CA' && resnum>=16 && resnum<=20 && !seen[resnum] && !isNaN(x)){
-      out.push({x:x,y:y,z:z,res:resnum});
-      seen[resnum]=true;
-    }
-  }
-
-  console.log('KLVFF CA atoms found:', out.length, out);
-  return out;
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB SWITCHER
+// ─────────────────────────────────────────────────────────────────────────────
+function xtab(btn, id) {
+  document.querySelectorAll('.xsec').forEach(function(s) { s.classList.remove('on'); });
+  document.querySelectorAll('.tbtn').forEach(function(b) { b.classList.remove('on'); });
+  document.getElementById('tab-' + id).classList.add('on');
+  btn.classList.add('on');
 }
 
-function initViewer(pdb){
-  ss('Building viewer...');
-  var el = document.getElementById('viewport');
-  viewer = $3Dmol.createViewer(el, {backgroundColor:0x05050f, antialias:true});
-  viewer.addModel(pdb, 'pdb');
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  buildButtons();
+  updatePanel(0);
+  resizeCanvas();
+  drawBonds();
 
-  /* CRITICAL COLOR FIX
-     Step 1: Set ALL residues to blue cartoon — full model
-     Step 2: Override ONLY residues 16-20 with red
-      This order prevents red bleeding to the whole chain.             */
-  viewer.setStyle({}, {}); // clear everything first
-  
-  viewer.setStyle({}, {
-    cartoon:{color:'#1e4e82', opacity:0.85}
+  window.addEventListener('resize', function() {
+    resizeCanvas();
   });
-  
-  viewer.addStyle(
-    {resi:{min:16,max:20}},
-    {
-      cartoon:{color:'#dd1111', opacity:1.0},
-      stick:{colorscheme:'redCarbon', radius:0.48}
-    }
-  );
 
-  /* Surfaces — same order: blue whole-protein first, red KLVFF on top */
-  window._klvff = parsePDB(pdb);
-  ss('Computing surfaces (15-20 seconds)...');
+  setLoadMsg('Connecting to RCSB…', 10);
+  ss('Fetching protein from RCSB…');
 
-  viewer.addSurface($3Dmol.SurfaceType.VDW,
-    {opacity:0.05, color:'#1e4e82'},
-    {},
-    function(){
-      viewer.addSurface($3Dmol.SurfaceType.VDW,
-        {opacity:0.60, color:'#dd1111'},
-        {resi:'16-20'},
-        function(){
-          // Zoom and orient
-          viewer.zoomTo({resi:'14-22'});
-          viewer.zoom(1.35);
-          viewer.spin('y', 0.45);
-          showCompound(0);
-          ss('Ready   Click compound to switch   Click viewer to pause/resume');
+  // Try primary RCSB endpoint, fall back to CORS proxy if needed
+  function tryFetch(url, onSuccess, onFail) {
+    fetch(url)
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(onSuccess)
+      .catch(onFail);
+  }
+
+  var primaryURL = 'https://files.rcsb.org/download/2BEG.pdb';
+  var fallbackURL = 'https://www.rcsb.org/pdb/files/2BEG.pdb';
+
+  setLoadMsg('Downloading 2BEG.pdb…', 25);
+
+  tryFetch(primaryURL,
+    function(pdb) {
+      setLoadMsg('PDB loaded — initializing…', 45);
+      if (typeof $3Dmol === 'undefined') {
+        ss('3Dmol.js did not load — please refresh.');
+        return;
+      }
+      initViewer(pdb);
+    },
+    function(err) {
+      console.warn('Primary fetch failed:', err, '— trying fallback');
+      setLoadMsg('Retrying…', 30);
+      tryFetch(fallbackURL,
+        function(pdb) {
+          setLoadMsg('PDB loaded — initializing…', 45);
+          initViewer(pdb);
+        },
+        function(err2) {
+          ss('Network error — cannot fetch 2BEG.pdb. Check your connection.');
+          document.getElementById('load-msg').textContent = 'Network error. Please refresh.';
         }
       );
     }
   );
-
-  var spinning = true;
-  el.addEventListener('click', function(){
-    if(spinning){ viewer.spin(false); spinning=false; ss('Paused — click to resume.'); }
-    else { viewer.spin('y',0.45); spinning=true; }
-  });
-}
-
-function xtab(btn, id){
-  document.querySelectorAll('.xsec').forEach(function(s){ s.classList.remove('on'); });
-  document.querySelectorAll('.tbtn').forEach(function(b){ b.classList.remove('on'); });
-  document.getElementById('tab-'+id).classList.add('on');
-  btn.classList.add('on');
-}
-
-// ── BOOT ─────────────────────────────────────────────────────────
-buildButtons();
-updatePanel(0);
-ss('Fetching protein from RCSB...');
-
-fetch('https://files.rcsb.org/download/2BEG.pdb')
-  .then(function(r){ return r.text(); })
-  .then(function(pdb){
-    if(typeof $3Dmol === 'undefined'){
-      ss('3Dmol.js did not load — refresh the page.');
-      return;
-    }
-    initViewer(pdb);
-  })
-  .catch(function(){
-    ss('Network error — cannot fetch PDB. Check connection.');
-  });
+});
 </script>
 </body>
 </html>
