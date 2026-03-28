@@ -338,7 +338,10 @@ function showCompound(idx){
     var dx=dock.x-a.x, dy=dock.y-a.y, dz=dock.z-a.z;
     var len = Math.sqrt(dx*dx+dy*dy+dz*dz);
     // Stop the tube just before it enters the sphere (85% of the way)
-    var stop = Math.max(0, (len - coreR*0.85)) / len;
+    if(len < 0.001) continue;
+    
+    var stop = (len - coreR*0.85) / len;
+    stop = Math.max(0.05, Math.min(0.95, stop));
     tube(viewer,
          a.x, a.y, a.z,
          a.x + dx*stop, a.y + dy*stop, a.z + dz*stop,
@@ -388,19 +391,27 @@ function buildButtons(){
 function parsePDB(pdb){
   var out=[], seen={};
   var lines = pdb.split('\n');
+
   for(var i=0;i<lines.length;i++){
     var l = lines[i];
-    if(l.slice(0,4)!=='ATOM') continue;
+    if(!l.startsWith('ATOM')) continue;
+
+    var chain = l.slice(21,22);
+    if(chain !== 'A') continue; // 🔥 FIX
+
     var atom   = l.slice(12,16).trim();
     var resnum = parseInt(l.slice(22,26).trim());
+
     var x = parseFloat(l.slice(30,38));
     var y = parseFloat(l.slice(38,46));
     var z = parseFloat(l.slice(46,54));
+
     if(atom==='CA' && resnum>=16 && resnum<=20 && !seen[resnum] && !isNaN(x)){
       out.push({x:x,y:y,z:z,res:resnum});
       seen[resnum]=true;
     }
   }
+
   console.log('KLVFF CA atoms found:', out.length, out);
   return out;
 }
@@ -414,12 +425,19 @@ function initViewer(pdb){
   /* CRITICAL COLOR FIX
      Step 1: Set ALL residues to blue cartoon — full model
      Step 2: Override ONLY residues 16-20 with red
-     This order prevents red bleeding to the whole chain.             */
-  viewer.setStyle({}, {cartoon:{color:'#1e4e82', opacity:0.85}});
+      This order prevents red bleeding to the whole chain.             */
+  viewer.setStyle({}, {}); // clear everything first
+  
+  viewer.setStyle({}, {
+    cartoon:{color:'#1e4e82', opacity:0.85}
+  });
+  
   viewer.addStyle(
-    {resi: '16-20'},
-    {cartoon:{color:'#dd1111', opacity:1.0},
-     stick:  {colorscheme:'redCarbon', radius:0.48}}
+    {resi:{min:16,max:20}},
+    {
+      cartoon:{color:'#dd1111', opacity:1.0},
+      stick:{colorscheme:'redCarbon', radius:0.48}
+    }
   );
 
   /* Surfaces — same order: blue whole-protein first, red KLVFF on top */
