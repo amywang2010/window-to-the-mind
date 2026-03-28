@@ -395,93 +395,66 @@ var compounds = [
     lip:[['MW 285','ok'],['LogP 1.99','ok'],['HBD 1','ok'],['HBA 3','ok']] },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GLOBAL STATE
-// ─────────────────────────────────────────────────────────────────────────────
+
+// =============================================================================
+// GLOBALS
+// =============================================================================
 var viewer    = null;
 var current   = 0;
 var spinning  = true;
 var rafHandle = null;
 var frameTime = 0;
 
-// Exactly 5 model-space positions for KLVFF residues 16-20.
-// Populated after PDB loads. Used for bond projection every frame.
+// KLVFF CA positions in model-space (populated after PDB loads)
 var klvffAtoms = [];
-
-// Model-space dock position of compound sphere.
-// Computed from KLVFF centroid + outward normal. Set once per compound switch.
+// Compound sphere center in model-space
 var dockPos    = null;
 var coreRadius = 1.6;
 
-// Canvas
+// Canvas used ONLY for RetinAD-1 decorative halo rings.
+// Bonds/anchors are drawn inside 3Dmol so they need zero projection math.
 var canvas = document.getElementById('bond-canvas');
 var ctx    = canvas.getContext('2d');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// UTILITIES
-// ─────────────────────────────────────────────────────────────────────────────
+// =============================================================================
+// SMALL UTILITIES
+// =============================================================================
 function ss(m) { document.getElementById('status').textContent = m; }
-
 function setLoad(msg, pct) {
   document.getElementById('load-msg').textContent = msg;
   document.getElementById('lbar').style.width = pct + '%';
 }
-
 function hexRgb(hex) {
   var h = hex.replace('#','');
   if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
-  return {
-    r: parseInt(h.slice(0,2), 16),
-    g: parseInt(h.slice(2,4), 16),
-    b: parseInt(h.slice(4,6), 16)
-  };
+  return { r:parseInt(h.slice(0,2),16), g:parseInt(h.slice(2,4),16), b:parseInt(h.slice(4,6),16) };
 }
-
 function resizeCanvas() {
   var wrap = document.getElementById('viewer-wrap');
   canvas.width  = wrap.clientWidth;
   canvas.height = wrap.clientHeight;
 }
 
-// PROJECT MODEL-SPACE TO CANVAS PIXELS
-// 
-// Strategy: use 3Dmol's modelToScreen() but calibrate it against itself.
-// We project TWO known model-space points and use the ratio of their
-// on-screen distance to canvas size. This self-calibrates regardless of
-// DPR, zoom, or internal canvas scaling — because both points go through
-// the exact same transform chain.
-//
-// Key insight: instead of trying to figure out the pixel coordinate space
-// modelToScreen returns in, we just compare two projected points to each
-// other. All bonds use (atomScreenPos - sphereScreenPos) which is a pure
-// difference — the absolute coordinate system cancels out.
-// The only thing that matters for drawing is WHERE the sphere appears and
-// WHERE each atom appears, relative to each other on the canvas.
-// We determine this by calibrating: project the sphere center AND an atom,
-// then scale by (canvas.width / vc.width) to convert to canvas pixels.
+// =============================================================================
+// PROJECT MODEL-SPACE -> CANVAS  (used ONLY for halo rings around sphere)
+// Both the sphere center and halo are projected the same way, so relative
+// placement is always correct. We use modelToScreen and scale by canvas/vc ratio.
+// =============================================================================
 function project(mx, my, mz) {
   if (!viewer) return null;
   try {
-    var pt = viewer.modelToScreen({ x: mx, y: my, z: mz });
+    var pt = viewer.modelToScreen({ x:mx, y:my, z:mz });
     if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
     var vc = viewer.getCanvas();
-    // modelToScreen returns in physical WebGL pixel coords (0..vc.width).
-    // Our canvas is sized to clientWidth (CSS pixels). Scale accordingly.
-    return {
-      x: pt.x * canvas.width  / vc.width,
-      y: pt.y * canvas.height / vc.height
-    };
+    return { x: pt.x * canvas.width / vc.width, y: pt.y * canvas.height / vc.height };
   } catch(e) { return null; }
 }
 
-
-// ─────────────────────────────────────────────────────────────────────────────
-// HARDCODED 2BEG CHAIN-A CA COORDINATES (residues 16-20)
-// These are taken directly from the 2BEG PDB file, MODEL 1, CHAIN A.
-// Used as the final fallback if 3Dmol atom extraction returns < 5 atoms.
-// Note: 3Dmol auto-centers the model, so these raw PDB coords need the
-// model's center of mass subtracted. We record both and pick whichever works.
-// ─────────────────────────────────────────────────────────────────────────────
+// =============================================================================
+// HARDCODED 2BEG CA COORDS — fallback if selectedAtoms returns < 5
+// These are the raw PDB coords; 3Dmol auto-centers the model so these may be
+// slightly off, but the live extraction (tier 1-3) will be used in practice.
+// =============================================================================
 var FALLBACK_KLVFF = [
   { x: 8.524,  y: 14.347, z: 2.039,  res: 16 },
   { x: 11.714, y: 15.832, z: 1.456,  res: 17 },
@@ -490,241 +463,191 @@ var FALLBACK_KLVFF = [
   { x: 19.847, y: 13.941, z: 1.372,  res: 20 },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// EXTRACT KLVFF ATOMS
-// Three-tier strategy to reliably get exactly one position per residue 16-20.
-// ─────────────────────────────────────────────────────────────────────────────
 function extractKlvffAtoms() {
   var byRes = {};
-
   function tryAtoms(sel) {
     try {
       var arr = viewer.selectedAtoms(sel);
-      if (!arr || arr.length === 0) return;
+      if (!arr) return;
       for (var i = 0; i < arr.length; i++) {
-        var a = arr[i];
-        var r = parseInt(a.resi, 10);
-        if (r >= 16 && r <= 20 && !byRes[r]) {
-          byRes[r] = { x: a.x, y: a.y, z: a.z, res: r };
-        }
+        var a = arr[i], r = parseInt(a.resi, 10);
+        if (r >= 16 && r <= 20 && !byRes[r])
+          byRes[r] = { x:a.x, y:a.y, z:a.z, res:r };
       }
     } catch(e) {}
   }
-
-  // Tier 1: CA atoms only
-  tryAtoms({ atom: 'CA' });
-
-  // Tier 2: backbone N if CA came up short
-  if (Object.keys(byRes).length < 5) tryAtoms({ atom: 'N' });
-
-  // Tier 3: any atom per residue
+  tryAtoms({ atom:'CA' });
+  if (Object.keys(byRes).length < 5) tryAtoms({ atom:'N' });
   if (Object.keys(byRes).length < 5) tryAtoms({});
-
-  // Build ordered array
   var out = [];
-  for (var r = 16; r <= 20; r++) {
-    if (byRes[r]) out.push(byRes[r]);
-  }
-
-  // Final fallback: hardcoded coords (guaranteed to have 5 points)
+  for (var r = 16; r <= 20; r++) if (byRes[r]) out.push(byRes[r]);
   if (out.length < 5) {
-    console.warn('3Dmol atom extraction got only', out.length, '— using hardcoded 2BEG coords');
+    console.warn('Falling back to hardcoded 2BEG coords, got', out.length);
     return FALLBACK_KLVFF.slice();
   }
-
-  console.log('KLVFF extracted from model:', out.length, out);
+  console.log('KLVFF atoms from model:', out.length, out);
   return out;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// =============================================================================
 // COMPUTE DOCK POSITION
-// Push the sphere outward from the KLVFF centroid along the radial direction
-// (centroid away from the protein origin). 3Dmol centers the model at ~(0,0,0).
-// The offset is baked into model space, so it rotates with the protein.
-// ─────────────────────────────────────────────────────────────────────────────
+// Sphere sits just outside KLVFF. Push from centroid along outward radial.
+// =============================================================================
 function computeDockPos(radius) {
-  // Centroid of KLVFF atoms
-  var cx = 0, cy = 0, cz = 0;
-  for (var i = 0; i < klvffAtoms.length; i++) {
-    cx += klvffAtoms[i].x;
-    cy += klvffAtoms[i].y;
-    cz += klvffAtoms[i].z;
+  var cx=0, cy=0, cz=0;
+  for (var i=0; i<klvffAtoms.length; i++) {
+    cx+=klvffAtoms[i].x; cy+=klvffAtoms[i].y; cz+=klvffAtoms[i].z;
   }
-  cx /= klvffAtoms.length;
-  cy /= klvffAtoms.length;
-  cz /= klvffAtoms.length;
-
-  // Direction from protein center (approx origin after 3Dmol auto-center) to KLVFF centroid
-  // Dampen Z since 2BEG fibril extends along Z; we want XY outward direction to be visible
-  var dx = cx, dy = cy, dz = cz * 0.15;
-  var len = Math.sqrt(dx*dx + dy*dy + dz*dz);
-  if (len < 0.5) { dx = 1; dy = 0.5; dz = 0; len = Math.sqrt(1.25); }
-  dx /= len; dy /= len; dz /= len;
-
-  // Offset: just enough to sit outside the KLVFF surface (2.5 + half sphere radius)
-  // Keeping it close makes the bonds obviously tethered to the red site
-  var offset = 3.5 + radius;  // sphere surface clears KLVFF atoms by ~3.5 Angstroms
-  return { x: cx + dx * offset, y: cy + dy * offset, z: cz + dz * offset };
+  cx/=klvffAtoms.length; cy/=klvffAtoms.length; cz/=klvffAtoms.length;
+  // Outward direction from protein center (~origin) toward KLVFF centroid
+  var dx=cx, dy=cy, dz=cz*0.15;
+  var len=Math.sqrt(dx*dx+dy*dy+dz*dz);
+  if (len<0.5){dx=1;dy=0.5;dz=0;len=Math.sqrt(1.25);}
+  dx/=len; dy/=len; dz/=len;
+  // Place sphere surface 3 Angstroms outside KLVFF centroid
+  var offset = 3.0 + radius;
+  return { x:cx+dx*offset, y:cy+dy*offset, z:cz+dz*offset };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// =============================================================================
 // ANIMATION LOOP
-// ─────────────────────────────────────────────────────────────────────────────
+// Only draws the decorative halo rings (for RetinAD-1) on the canvas.
+// All bonds/anchors are 3Dmol shapes — they need no per-frame redraw.
+// =============================================================================
 function startRenderLoop() {
   if (rafHandle) cancelAnimationFrame(rafHandle);
   var lastT = null;
-
   function frame(t) {
     rafHandle = requestAnimationFrame(frame);
-    var dt = lastT ? Math.min((t - lastT) / 1000, 0.05) : 0;
-    lastT = t;
-    frameTime += dt;
-
+    var dt = lastT ? Math.min((t-lastT)/1000, 0.05) : 0;
+    lastT = t; frameTime += dt;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!viewer || !dockPos || klvffAtoms.length === 0) return;
-
-    var c   = compounds[current];
-    var rgb = hexRgb(c.hex);
-
-    // Project sphere center
+    if (!viewer || !dockPos) return;
+    var c = compounds[current];
+    if (!c.isNovel) return;   // halos only for RetinAD-1
     var sC = project(dockPos.x, dockPos.y, dockPos.z);
     if (!sC) return;
-
-    // Dynamically measure sphere screen radius (accounts for zoom/rotation)
-    // Project a point 1 coreRadius to the right in model space, measure px distance
-    var edgePt   = project(dockPos.x + coreRadius, dockPos.y, dockPos.z);
-    var spherePxR = edgePt ? Math.hypot(edgePt.x - sC.x, edgePt.y - sC.y) : 25;
-    spherePxR = Math.max(15, Math.min(spherePxR, 80));
-
-    // How many bonds to draw — capped at available KLVFF atoms (max 5)
-    var bondCount = Math.min(c.nBonds, klvffAtoms.length);
-
-    // Pick which KLVFF atoms to bond to, spaced evenly across all 5 residues
-    var atoms = [];
-    if (bondCount >= klvffAtoms.length) {
-      atoms = klvffAtoms.slice();
-    } else {
-      // Even spacing: bondCount=1 → middle atom, =2 → ends, etc.
-      var step = (klvffAtoms.length - 1) / Math.max(bondCount - 1, 1);
-      for (var i = 0; i < bondCount; i++) {
-        var idx = Math.round(i * step);
-        atoms.push(klvffAtoms[Math.min(idx, klvffAtoms.length - 1)]);
-      }
-    }
-
-    // ── Draw bonds ───────────────────────────────────────────────────────────
-    for (var i = 0; i < atoms.length; i++) {
-      var a  = atoms[i];
-      var aS = project(a.x, a.y, a.z);
-      if (!aS) continue;
-
-      var bdx = sC.x - aS.x;
-      var bdy = sC.y - aS.y;
-      var len = Math.hypot(bdx, bdy);
-      if (len < 4) continue;
-
-      // Line goes FROM the atom (aS) TO the sphere surface.
-      // stopT stops the line at the sphere edge so it doesn't overdraw the sphere.
-      var stopT = Math.max(0.1, Math.min((len - spherePxR) / len, 0.97));
-
-      var ex = aS.x + bdx * stopT;
-      var ey = aS.y + bdy * stopT;
-
-      // Glow halo — drawn under the solid line
+    // Measure sphere screen radius for halo sizing
+    var edgePt = project(dockPos.x + coreRadius, dockPos.y, dockPos.z);
+    var spxR = edgePt ? Math.hypot(edgePt.x-sC.x, edgePt.y-sC.y) : 25;
+    spxR = Math.max(12, Math.min(spxR, 90));
+    var rgb = hexRgb(c.hex);
+    for (var ring=0; ring<3; ring++) {
+      var baseR = spxR + 10 + ring*16;
+      var pulse = Math.sin(frameTime*1.4 + ring*1.2)*5;
+      var haloR = baseR + pulse;
+      var alpha = 0.22 - ring*0.05;
       ctx.beginPath();
-      ctx.moveTo(aS.x, aS.y);
-      ctx.lineTo(ex, ey);
-      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.18)';
-      ctx.lineWidth   = 12;
-      ctx.lineCap     = 'round';
+      ctx.arc(sC.x, sC.y, haloR, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+','+alpha+')';
+      ctx.lineWidth = 2.5;
       ctx.stroke();
-
-      // Solid bond line FROM atom TO sphere surface
-      ctx.beginPath();
-      ctx.moveTo(aS.x, aS.y);
-      ctx.lineTo(ex, ey);
-      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.92)';
-      ctx.lineWidth   = 4;
-      ctx.lineCap     = 'round';
-      ctx.stroke();
-
-      // Traveling pulse dot along the bond
-      var phase = (frameTime * 0.58 + i / bondCount) % 1.0;
-      ctx.beginPath();
-      ctx.arc(aS.x + bdx * phase * stopT, aS.y + bdy * phase * stopT, 5, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.95)';
-      ctx.fill();
-
-      // White anchor dot drawn ON the atom position — visually pins the bond to KLVFF
-      ctx.beginPath();
-      ctx.arc(aS.x, aS.y, 10, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.22)';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(aS.x, aS.y, 6, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-    }
-
-    // ── RetinAD-1: animated glow rings around sphere ─────────────────────────
-    if (c.isNovel) {
-      for (var ring = 0; ring < 3; ring++) {
-        var baseR = spherePxR + 8 + ring * 14;
-        var pulse = Math.sin(frameTime * 1.4 + ring * 1.2) * 5;
-        var haloR = baseR + pulse;
-        var alpha = 0.20 - ring * 0.05;
-        ctx.beginPath();
-        ctx.arc(sC.x, sC.y, haloR, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + alpha + ')';
-        ctx.lineWidth   = 2.5;
-        ctx.stroke();
-      }
     }
   }
-
   frame(0);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// =============================================================================
+// PICK BOND TARGET ATOMS
+// Select `n` atoms from klvffAtoms evenly spaced across residues 16-20.
+// =============================================================================
+function pickBondAtoms(n) {
+  if (n >= klvffAtoms.length) return klvffAtoms.slice();
+  var out = [];
+  var step = (klvffAtoms.length-1) / Math.max(n-1, 1);
+  for (var i=0; i<n; i++) {
+    var idx = Math.min(Math.round(i*step), klvffAtoms.length-1);
+    out.push(klvffAtoms[idx]);
+  }
+  return out;
+}
+
+// =============================================================================
 // SHOW COMPOUND
-// ─────────────────────────────────────────────────────────────────────────────
+// Removes and redraws all 3Dmol shapes: compound sphere + bond cylinders +
+// white anchor spheres at each KLVFF target atom.
+// Nothing on the canvas — bonds are 3D objects, always correctly positioned.
+// =============================================================================
 function showCompound(idx) {
   if (!viewer) return;
   current = idx;
   var c = compounds[idx];
 
-  // Scale sphere radius with binding strength
-  var str    = (Math.abs(c.score) - 7.9) / (24.10 - 7.9);
-  coreRadius = 1.4 + str * 1.5;   // 1.4 Å (weak) → 2.9 Å (strong)
+  // Sphere radius scales with binding strength
+  var str = (Math.abs(c.score) - 7.9) / (24.10 - 7.9);
+  coreRadius = 1.4 + str * 1.5;   // 1.4 (weak) to 2.9 (strong) Angstroms
 
-  // Dock position in model space (rotates with protein — correct!)
   dockPos = computeDockPos(coreRadius);
 
-  // Rebuild 3Dmol shapes
   viewer.removeAllShapes();
 
-  // Main sphere
-  viewer.addSphere({ center: dockPos, radius: coreRadius, color: c.hex, opacity: 1.0 });
-
+  // --- Compound sphere ---
+  viewer.addSphere({ center:dockPos, radius:coreRadius, color:c.hex, opacity:1.0 });
   // Specular highlight
   viewer.addSphere({
-    center: {
-      x: dockPos.x - coreRadius * 0.28,
-      y: dockPos.y + coreRadius * 0.28,
-      z: dockPos.z + coreRadius * 0.12
-    },
-    radius: coreRadius * 0.28,
-    color: '#ffffff',
-    opacity: 0.28
+    center:{ x:dockPos.x-coreRadius*0.28, y:dockPos.y+coreRadius*0.28, z:dockPos.z+coreRadius*0.12 },
+    radius:coreRadius*0.28, color:'#ffffff', opacity:0.28
   });
-
   // Soft outer glow shell
-  viewer.addSphere({ center: dockPos, radius: coreRadius * 1.6, color: c.hex, opacity: 0.07 });
+  viewer.addSphere({ center:dockPos, radius:coreRadius*1.55, color:c.hex, opacity:0.07 });
 
-  // Re-add KLVFF CA marker spheres (they get wiped by removeAllShapes)
-  for (var i = 0; i < klvffAtoms.length; i++) {
-    var a = klvffAtoms[i];
-    viewer.addSphere({ center: { x: a.x, y: a.y, z: a.z }, radius: 0.45, color: '#ff2222', opacity: 1.0 });
+  // --- Bond cylinders + anchor spheres ---
+  // Each cylinder runs from a KLVFF CA atom to the sphere surface.
+  // "to sphere surface" = stop at dockPos minus coreRadius along the bond direction.
+  var bondAtoms = pickBondAtoms(c.nBonds);
+  for (var i=0; i<bondAtoms.length; i++) {
+    var a = bondAtoms[i];
+
+    // Direction from atom to dock center
+    var dx = dockPos.x - a.x;
+    var dy = dockPos.y - a.y;
+    var dz = dockPos.z - a.z;
+    var dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+    if (dist < 0.01) continue;
+    var nx = dx/dist, ny = dy/dist, nz = dz/dist;
+
+    // Cylinder end point: sphere surface (back off by coreRadius from center)
+    var endX = dockPos.x - nx*coreRadius;
+    var endY = dockPos.y - ny*coreRadius;
+    var endZ = dockPos.z - nz*coreRadius;
+
+    // Cylinder start: slightly outside atom (0.3 A gap so it doesn't z-fight with ribbon)
+    var startX = a.x + nx*0.3;
+    var startY = a.y + ny*0.3;
+    var startZ = a.z + nz*0.3;
+
+    // Bond cylinder
+    viewer.addCylinder({
+      start:{ x:startX, y:startY, z:startZ },
+      end:  { x:endX,   y:endY,   z:endZ   },
+      radius: 0.12,
+      color: c.hex,
+      opacity: 0.90,
+      fromCap: true,
+      toCap:   true
+    });
+
+    // Thin glow cylinder (slightly wider, low opacity) for glow effect
+    viewer.addCylinder({
+      start:{ x:startX, y:startY, z:startZ },
+      end:  { x:endX,   y:endY,   z:endZ   },
+      radius: 0.22,
+      color: c.hex,
+      opacity: 0.18,
+      fromCap: false,
+      toCap:   false
+    });
+
+    // White anchor sphere at the KLVFF atom end
+    viewer.addSphere({ center:{ x:a.x, y:a.y, z:a.z }, radius:0.30, color:'#ffffff', opacity:0.95 });
+    // Coloured halo ring around anchor
+    viewer.addSphere({ center:{ x:a.x, y:a.y, z:a.z }, radius:0.45, color:c.hex, opacity:0.35 });
+  }
+
+  // KLVFF site marker dots (always shown, behind bonds)
+  for (var i=0; i<klvffAtoms.length; i++) {
+    var ka = klvffAtoms[i];
+    viewer.addSphere({ center:{ x:ka.x, y:ka.y, z:ka.z }, radius:0.22, color:'#ff2222', opacity:1.0 });
   }
 
   viewer.render();
@@ -733,61 +656,41 @@ function showCompound(idx) {
   ss(c.name + '  \u00b7  ' + c.nBonds + ' bonds to KLVFF   |   Drag = rotate   Scroll = zoom   Click = pause/resume');
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// =============================================================================
 // INIT VIEWER
-// ─────────────────────────────────────────────────────────────────────────────
+// =============================================================================
 function initViewer(pdb) {
   setLoad('Building 3D viewer\u2026', 55);
   var el = document.getElementById('viewport');
-
-  viewer = $3Dmol.createViewer(el, { backgroundColor: 0x04040e, antialias: true });
+  viewer = $3Dmol.createViewer(el, { backgroundColor:0x04040e, antialias:true });
   viewer.addModel(pdb, 'pdb');
 
-  // Full protein: blue cartoon ribbon
-  viewer.setStyle({}, { cartoon: { color: '#1a55bb', opacity: 0.92 } });
+  // Full protein: blue cartoon
+  viewer.setStyle({}, { cartoon:{ color:'#1a55bb', opacity:0.92 } });
 
-  // KLVFF (residues 16-20): bright red cartoon — OVERWRITES blue for these residues
-  // Using array selector [16,17,18,19,20] which is well-supported in 3Dmol 2.x
-  viewer.addStyle(
-    { resi: [16, 17, 18, 19, 20] },
-    { cartoon: { color: '#ff1c1c', opacity: 1.0 } }
-  );
+  // KLVFF residues 16-20: bright red cartoon + thin sticks
+  viewer.addStyle({ resi:[16,17,18,19,20] }, { cartoon:{ color:'#ff1c1c', opacity:1.0 } });
+  viewer.addStyle({ resi:[16,17,18,19,20] }, { stick:{ color:'#ff3333', radius:0.18, opacity:0.88 } });
 
-  // KLVFF side chains as thin sticks (radius 0.18 avoids hexagonal artifact)
-  viewer.addStyle(
-    { resi: [16, 17, 18, 19, 20] },
-    { stick: { color: '#ff3333', radius: 0.18, opacity: 0.88 } }
-  );
-
-  // Extract KLVFF atom positions for bond drawing
-  setLoad('Locating KLVFF binding residues\u2026', 70);
+  setLoad('Locating KLVFF residues\u2026', 70);
   klvffAtoms = extractKlvffAtoms();
-
-  // Add small red marker spheres at each KLVFF CA position
-  for (var i = 0; i < klvffAtoms.length; i++) {
-    var a = klvffAtoms[i];
-    viewer.addSphere({ center: { x: a.x, y: a.y, z: a.z }, radius: 0.45, color: '#ff2222', opacity: 1.0 });
-  }
 
   setLoad('Rendering\u2026', 85);
   viewer.render();
 
-  // Camera: focus on KLVFF site, pull back to show ~65-70% of protein
-  viewer.zoomTo({ resi: [16, 17, 18, 19, 20] });
+  viewer.zoomTo({ resi:[16,17,18,19,20] });
   viewer.zoom(0.65);
-
   viewer.spin('y', 0.28);
   spinning = true;
 
   showCompound(0);
 
   setLoad('Ready!', 100);
-  setTimeout(function() { document.getElementById('loading').classList.add('hidden'); }, 300);
+  setTimeout(function(){ document.getElementById('loading').classList.add('hidden'); }, 300);
 
-  // Click to pause/resume spin
   el.addEventListener('click', function() {
-    if (spinning) { viewer.spin(false); spinning = false; ss('Paused \u2014 click viewer to resume.'); }
-    else          { viewer.spin('y', 0.28); spinning = true; }
+    if (spinning){ viewer.spin(false); spinning=false; ss('Paused \u2014 click to resume.'); }
+    else         { viewer.spin('y',0.28); spinning=true; }
   });
 }
 
