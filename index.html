@@ -461,15 +461,20 @@ function project(mx, my, mz) {
     var pt = viewer.modelToScreen({ x: mx, y: my, z: mz });
     if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
 
+    // modelToScreen() returns coordinates in 3Dmol's internal WebGL canvas
+    // pixel space (0..vc.width, 0..vc.height — physical pixels, not CSS pixels).
+    // Our bond-canvas is set to viewer-wrap's CSS clientWidth/clientHeight.
+    // We map physical→CSS by dividing by devicePixelRatio, then scale to our canvas.
     var vc  = viewer.getCanvas();
-    // Use CSS dimensions (clientWidth/clientHeight), not physical pixel dimensions
-    var vcW = vc.clientWidth  > 0 ? vc.clientWidth  : (vc.width  / (window.devicePixelRatio || 1));
-    var vcH = vc.clientHeight > 0 ? vc.clientHeight : (vc.height / (window.devicePixelRatio || 1));
+    var dpr = window.devicePixelRatio || 1;
+    // vc.width is physical pixels; divide by dpr to get CSS pixels of the 3Dmol canvas
+    var vcCssW = vc.width  / dpr;
+    var vcCssH = vc.height / dpr;
 
-    var scaleX = canvas.width  / vcW;
-    var scaleY = canvas.height / vcH;
+    var scaleX = canvas.width  / vcCssW;
+    var scaleY = canvas.height / vcCssH;
 
-    return { x: pt.x * scaleX, y: pt.y * scaleY };
+    return { x: pt.x / dpr * scaleX, y: pt.y / dpr * scaleY };
   } catch(e) {
     return null;
   }
@@ -561,8 +566,9 @@ function computeDockPos(radius) {
   if (len < 0.5) { dx = 1; dy = 0.5; dz = 0; len = Math.sqrt(1.25); }
   dx /= len; dy /= len; dz /= len;
 
-  // Offset: clear the protein surface (about 4-5 Angstroms) + sphere radius
-  var offset = 5.0 + radius;
+  // Offset: just enough to sit outside the KLVFF surface (2.5 + half sphere radius)
+  // Keeping it close makes the bonds obviously tethered to the red site
+  var offset = 2.5 + radius * 0.5;
   return { x: cx + dx * offset, y: cy + dy * offset, z: cz + dz * offset };
 }
 
