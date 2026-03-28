@@ -396,9 +396,6 @@ function parsePDB(pdb){
     var l = lines[i];
     if(!l.startsWith('ATOM')) continue;
 
-    var chain = l.slice(21,22);
-    if(chain !== 'A') continue; // 🔥 FIX
-
     var atom   = l.slice(12,16).trim();
     var resnum = parseInt(l.slice(22,26).trim());
 
@@ -406,6 +403,7 @@ function parsePDB(pdb){
     var y = parseFloat(l.slice(38,46));
     var z = parseFloat(l.slice(46,54));
 
+    // ❗ NO CHAIN FILTER AT ALL
     if(atom==='CA' && resnum>=16 && resnum<=20 && !seen[resnum] && !isNaN(x)){
       out.push({x:x,y:y,z:z,res:resnum});
       seen[resnum]=true;
